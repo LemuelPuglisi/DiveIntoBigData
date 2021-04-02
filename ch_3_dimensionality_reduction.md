@@ -208,3 +208,77 @@ $$
 Risolviamo il sistema lineare ed otteniamo le componenti dell'autovettore $\bar{e}^{(1)}$ associato all'autovalore $\lambda_1$. Ripetiamo il processo con l'autovalore $\lambda_2$. 
 
  
+
+#### 3.2.3 Power iteration
+
+Nella pratica, per matrici molto grandi, la soluzione precedente non è ammissibile. Studiamo un metodo alternativo computazionalmente meno oneroso, chiamato *power iteration*. 
+Sia $M$ una matrice di dimensioni $n \times n$ per la quale desideriamo calcolare le autocoppie. 
+
+Partiamo da un vettore generato casualmente $\bar{x}_1$ di dimensione $n$. Calcoliamo un nuovo vettore $\bar{x}_2$ come segue:
+$$
+\bar{x}_2 = \frac{M \cdot \bar{x}_1}{||M \cdot \bar{x}_1||}
+$$
+dove con $||M||$ intendiamo la *norma di Frobenius*: 
+$$
+||M|| = \sqrt{\sum_{i,j}m_{ij}^2} 
+$$
+Osserviamo che, così facendo, il vettore $\bar{x}_2$ sarà normalizzato ad 1. Procediamo iterativamente calcolando il generico vettore $\bar{x}_i$ (per $i > 1$) come segue: 
+$$
+\bar{x}_i = \frac{M \cdot \bar{x}_{i-1}}{||M \cdot \bar{x}_{i-1}||}
+$$
+Fissato arbitrariamente un valore costante piccolo $\epsilon$, l'iterazione si fermerà quando 
+$$
+|| x_i - x_{i+1}|| \le \epsilon
+$$
+A questo punto, $x_i$ è approssimativamente l'autovettore ***principale*** di $M$. Calcoliamo l'autovalore corrispondente attraverso la formula inversa: 
+$$
+\lambda_1 = {\bar{x}_i}^T \cdot M \cdot \bar{x}_i
+$$
+Utilizzando questo metodo ricaveremo la prima autocoppia principale $(\lambda_1, \bar{x}_1)$ (oss. $\lambda_1$ è l'autovalore più grande). Per calcolare le rimanenti autocoppie è necessario enunciare il seguente teorema.
+
+
+
+#### 3.2.4 Teorema 
+
+Sia $A$ una matrice di dimensione $n \times n$ con $\lambda_1, \dots, \lambda_n$ autovalori e $\bar{v}_1, \dots, \bar{v}_n$ autovettori.
+
+Se gli autovettori sono unitari (quindi $\bar{v}_i^T \cdot \bar{v}_i = 1$), allora posso costruire una nuova matrice $B$ come segue:
+$$
+B = A - \lambda_1 \cdot \bar{v}_1 \cdot \bar{v}_1^T
+$$
+Se gli autovettori non sono unitari, allora $\exists \bar{x} : \bar{v}_1 \cdot \bar{x} = 1$, per cui utilizzo $\bar{x}$ nella formula di costruzione della matrice $B$:
+$$
+B = A - \lambda_1 \cdot \bar{v}_1 \cdot \bar{x}
+$$
+La matrice $B$ avrà un autovalore nullo (sottratto nell'espressione precedente) con corrispondente autovettore $\bar v_1$. I restanti $n-1$ autovalori $\lambda_2, \dots, \lambda_n$ saranno uguali a quelli della matrice di partenza $A$, mentre i corrispondenti autovettori $\bar u_2, \dots, \bar u_n$ saranno diversi. 
+
+La power iteration calcola l'autocoppia principale (autovalore più grande): se otteniamo tramite power iteration l'autocoppia principale da $A$, una volta annullato l'autovalore più grande (su $B$) sarà possibile ri-eseguire la power iteration su $B$ ed ottenere il secondo autovalore più grande $\lambda_2$ e il corrispondente autovettore $\bar u_2$. Per ricondurci all'autovettore corrispondente a $\lambda_2$ su $A$ è necessario applicare la seguente formula: 
+$$
+\bar v_2 = (\lambda_1 - \lambda_2) \cdot \bar u_2 + \lambda_1 \cdot (\bar v_1^T \cdot \bar u_2) \cdot \bar v_1
+$$
+Generalizzando per ogni $\bar u_i$ scriviamo
+$$
+\bar v_i = (\lambda_1 - \lambda_i) \cdot \bar u_i + \lambda_1 \cdot (\bar v_1^T \cdot \bar u_i) \cdot \bar v_1 \text{ per } i = 2, \dots, n
+$$
+
+
+#### 3.2.5 Procedura 
+
+```
+
+    def calculate_eigen_values_and_vectors(A):
+        # initialization
+        eigen_value[1], eigen_vector[1] = power_iteration(A)
+        B = A
+        for i = 1 to n-1:
+            # azzeriamo iterativamente tutti gli autovalori di A 
+            B = B - (eigen_value[i] * eigen_vector[i] * transpose(eigen_vector[1]))
+            # utilizzando la power iteration per calcolare i restanti
+            eigen_value[i], eigen_vector[i] = power_iteration(B)
+        return eigen_value, eigen_vector
+
+```
+
+
+
+> LEZIONE 7 ore 00:41:11

@@ -18,7 +18,7 @@ Supponiamo di avere dei punti distribuiti in uno spazio di dimensione $D$. Può 
 
 
 
-<img src="C:\Users\Charlemagne\Documents\Repository Universitarie\DiveIntoBigData\assets\ch3\dim_red_ex.PNG" alt="dimensionality reduction" style="zoom: 20%;" />
+<img src="assets\ch3\dim_red_ex.PNG" alt="dimensionality reduction" style="zoom: 20%;" />
 
 
 
@@ -27,9 +27,9 @@ Supponiamo di avere dei punti distribuiti in uno spazio di dimensione $D$. Può 
 * Il **rango** di una matrice $A$ è un numero intero non negativo associato alla matrice $A$. Ne indica il numero di righe (o colonne) linearmente indipendenti, ovvero non ricavabili attraverso combinazioni lineari di altre righe (o colonne).
 * Si dice **base di uno spazio vettoriale** un insieme di vettori grazie ai quali possiamo ricostruire in modo  unico tutti i vettori dello spazio mediante combinazioni lineari. Disponendo di una base di uno spazio vettoriale conosciamo quindi,  automaticamente, l'intero spazio vettoriale.
 * Si dicono **coordinate (o componenti) di un vettore rispetto a una base** gli scalari mediante cui il vettore si esprime come combinazione lineare dei vettori della base. Equivalentemente, fissata una base di  uno spazio vettoriale, le coordinate di un vettore rispetto alla base  scelta sono i coefficienti della combinazione lineare con cui si esprime il vettore in termini degli elementi della base.
-* Sia $M$ una matrice quadrata. Sia $\lambda$ una costante ed $e$ un vettore colonna non-zero con lo stesso numero di righe di $M$. Diciamo che $\lambda$ è un **autovalore** di $M$ ed $e$ è il suo corrispondente **autovettore** di $M$ se $Me = \lambda e$. La coppia $(\lambda, e)$ prende il nome di **autocoppia**.
-* Se $e$ è un autovettore di $M$ con autovalore $\lambda$ e $c$ è una qualsiasi costante, allora anche $c \cdot e$ è un autovettore di $M$ con lo stesso autovalore $\lambda$. Moltiplicare il vettore per una costante cambia il suo modulo ma non la sua direzione. Per evitare ambiguità assumeremo che ogni autovettore sia un vettore unitario (*unit vector*), ovvero di modulo 1. 
-* Sia $M$ una matrice quadrata con autovalori $\lambda_1, \dots, \lambda_n$ e corrispondenti autovettori $e_1, \dots, e_n$. Se succede che $|\lambda_1| > \dots > |\lambda_n|$ allora chiameremo $\lambda_1$ **autovalore principale**
+* Sia $M$ una matrice quadrata. Sia $\lambda$ una costante ed $\bar e$ un vettore colonna non-zero con lo stesso numero di righe di $M$. Diciamo che $\lambda$ è un **autovalore** di $M$ ed $\bar e$ è il suo corrispondente **autovettore** di $M$ se $M \bar e = \lambda \bar e$. La coppia $(\lambda, \bar e)$ prende il nome di **autocoppia**.
+* Se $\bar e$ è un autovettore di $M$ con autovalore $\lambda$ e $c$ è una qualsiasi costante, allora anche $c \cdot \bar e$ è un autovettore di $M$ con lo stesso autovalore $\lambda$. Moltiplicare il vettore per una costante cambia il suo modulo ma non la sua direzione. Per evitare ambiguità assumeremo che ogni autovettore sia un vettore unitario (*unit vector*), ovvero di modulo 1. 
+* Sia $M$ una matrice quadrata con autovalori $\lambda_1, \dots, \lambda_n$ e corrispondenti autovettori $\bar e_1, \dots, \bar e_n$. Se succede che $|\lambda_1| > \dots > |\lambda_n|$ allora chiameremo $\lambda_1$ **autovalore principale**
 
 
 
@@ -81,5 +81,130 @@ L'obiettivo della dimensionality reduction è proprio quello di identificare gil
 
 
 
-> LEZIONE 7: 00:09:13, calcolo degli autovalori e autovettori
+### 3.2 Calcolo di autovalori ed autovettori
 
+Nei richiami di algebra lineare abbiamo scritto che, per ogni autocoppia $(\lambda, \bar{e})$ si ha che:
+$$
+M \bar e = \lambda \bar{e}
+$$
+Possiamo riscrivere l'equazione nel seguente modo:
+$$
+(M - \lambda I)e = \bar 0
+$$
+
+
+Dove $I$ è una matrice identità delle stesse dimensioni di $M$. Tale equazione in forma matriciale è rappresentabile come un sistema di equazioni lineari. La matrice $(M - \lambda I)$ corrisponde alla matrice $M$ la cui diagonale è ridotta di una fattore $\lambda$. Sia $\lambda$ incognito, vogliamo trovare gli autovalori e gli autovettori della matrice $M$. 
+
+Per i teoremi sull'algebra lineare, affinché si risolva l'equazione $(M - \lambda I)e = \bar 0$ per un vettore $\bar e \ne \bar 0$, il determinante della matrice $M - \lambda I$ deve essere 0. Sebbene il determinante di una matrice $n \times n$ abbia $n!$ termini, questo può essere calcolato in diversi modi in tempo $O(n^3)$, di seguito vedremo uno tra questi metodi. 
+
+
+
+#### 3.2.1 Chiò pivotal condensation 
+
+Il metodo *Chio pivotal condensation* (condensazione pivotale) permette di calcolare il determinante di una matrice $A$ di dimensione $n \times n$ andando a dividere il determinante di una nuova matrice $B$ di dimensione $(n-1) \times (n-1)$ per il primo elemento della matrice $A$ elevato ad $n-2$: 
+$$
+\det(A) = \frac{\det(B)}{a_{11}^{n-2}}
+$$
+Ipotesi necessaria è che la diagonale della matrice $A$ sia non nulla, quindi che $a_{ii} \ne 0$. La matrice $B$ va costruita in funzione della matrice $A$. Il generico elemento $b_{ij}$ è ottenuto come segue:
+$$
+b_{ij} = a_{11} \times a_{i+1,j+1} - a_{1, j+1} \times a_{i+1, 1}
+$$
+Si applica ricorsivamente il metodo alla matrice $B$ sino a che non si arriva ad una matrice il quale determinante è trattabile con metodi diretti. 
+
+
+
+#### 3.2.2 Risolvere l'equazione 
+
+Dato che il determinante della matrice $(M - \lambda I)$ è un polinomio di grado $n$ dove $\lambda$ è l'incognita, allora possiamo ottenere $n$ soluzioni, ovvero ottenere tutti ed $n$ gli autovalori della matrice $M$. Un valore $c$ qualsiasi tra queste $n$ soluzioni risolverà l'equazione $M \bar{e} = c \bar{e}$. 
+
+Per ogni autovalore $\lambda$ trovato, è possibile ricavare il corrispondente autovettore $\bar{e}$ risolvendo il sistema lineare di $n$ equazioni in $n$ incognite, ovvero le componenti dell'autovettore $\bar e$: 
+$$
+(M - \lambda I)\bar{e} = \bar{0}
+$$
+Per semplicità imponiamo che ogni autovettore sia unitario, trovando così una sola soluzione. Facciamo un esempio banale: 
+$$
+M = \begin{bmatrix}
+2 & 1  \\
+3 & 2 \\
+\end{bmatrix}
+$$
+Quindi impostiamo l'equazione: 
+$$
+\left( 
+\begin{bmatrix}
+2 & 1  \\
+3 & 2 \\
+\end{bmatrix} 
+- 
+\begin{bmatrix}
+\lambda & 0  \\
+0 & \lambda \\
+\end{bmatrix} 
+\right)
+\cdot
+\begin{bmatrix}
+e_1 \\
+e_2 \\
+\end{bmatrix} 
+= 
+\begin{bmatrix}
+0 \\
+0 \\
+\end{bmatrix}
+$$
+Risolvendo la sottrazione all'interno delle parentesi otteniamo: 
+$$
+(M-\lambda I) = \begin{bmatrix}
+2 - \lambda & 1  \\
+3 & 2 - \lambda \\
+\end{bmatrix}
+$$
+Il determinante di questa matrice deve essere 0 poiché il sistema lineare abbia soluzioni: 
+$$
+\det \left(
+\begin{bmatrix}
+2 - \lambda & 1  \\
+3 & 2 - \lambda \\
+\end{bmatrix}
+\right) = 
+\left[ (2 - \lambda) \times (2 - \lambda) \right] - (3 \times 1) = \lambda^2 -4\lambda +1 = 0
+$$
+Risolvendo il polinomio di grado $n=2$ troviamo i due autovalori: 
+$$
+\lambda_1 = 2 + \sqrt{3} \text{ ; } \lambda_2 = 2 - \sqrt{3}
+$$
+Prendiamo la soluzione $\lambda_1$ e sostituiamola all'equazione precedente: 
+$$
+\left( 
+\begin{bmatrix}
+2 & 1  \\
+3 & 2 \\
+\end{bmatrix} 
+- 
+\begin{bmatrix}
+\lambda_1 & 0  \\
+0 & \lambda_1 \\
+\end{bmatrix} 
+\right)
+\cdot
+\begin{bmatrix}
+e_1 \\
+e_2 \\
+\end{bmatrix} 
+= 
+\begin{bmatrix}
+0 \\
+0 \\
+\end{bmatrix}
+$$
+Ovvero: 
+$$
+\begin{cases}
+(2 - \lambda_1)e_1 + e_2 = 0 \\
+3e_1 + (2-\lambda_1)e_2 = 0 \\ 
+\sqrt{e_1^2 + e_2^2} = 1 \text{ (vincolo)}
+\end{cases}
+$$
+Risolviamo il sistema lineare ed otteniamo le componenti dell'autovettore $\bar{e}^{(1)}$ associato all'autovalore $\lambda_1$. Ripetiamo il processo con l'autovalore $\lambda_2$. 
+
+ 

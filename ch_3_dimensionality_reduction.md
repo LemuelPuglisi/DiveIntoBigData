@@ -18,7 +18,7 @@ Supponiamo di avere dei punti distribuiti in uno spazio di dimensione $D$. Può 
 
 
 
-<img src="assets\ch3\dim_red_ex.PNG" alt="dimensionality reduction" style="zoom: 20%;" />
+<img src="ch_3_dimensionality_reduction.assets\dim_red_ex.PNG" alt="dimensionality reduction" style="zoom: 20%;" />
 
 
 
@@ -238,47 +238,199 @@ Utilizzando questo metodo ricaveremo la prima autocoppia principale $(\lambda_1,
 
 
 
-#### 3.2.4 Teorema 
+#### 3.2.4 Generalizzazione della Power iteration
 
-Sia $A$ una matrice di dimensione $n \times n$ con $\lambda_1, \dots, \lambda_n$ autovalori e $\bar{v}_1, \dots, \bar{v}_n$ autovettori.
+Sia $A$ una matrice simmetrica di dimensione $n \times n$ con $(\lambda_1, \dots, \lambda_n)$ autovalori e $(\bar{v}_1, \dots, \bar{v}_n)$ autovettori. Supponiamo di aver calcolato l'autocoppia principale $(\lambda_1, \bar{v}_1)$ attraverso la power iteration. Per trovare la seconda autocoppia, creiamo una nuova matrice: 
+$$
+B = A - \lambda_1 \bar{v}_1 \bar{v}_1^{T}
+$$
+Applicare la power iteration alla matrice $B$ restituirà l'autocoppia principale $(\lambda^*, \bar{v}^*)$ della matrice $B$, ovvero l'autocoppia con autovalore più grande. Tale autocoppia corrisponde alla seconda autocoppia della matrice $A$ di partenza. Intuitivamente, quello che abbiamo fatto è stato rimuovere l'influenza dell'autovettore principale $\bar v_1$ impostando il corrispondente autovalore principale $\lambda_1$ a zero. Ciò viene giustificato dalle seguenti osservazioni:
 
-Se gli autovettori sono unitari (quindi $\bar{v}_i^T \cdot \bar{v}_i = 1$), allora posso costruire una nuova matrice $B$ come segue:
-$$
-B = A - \lambda_1 \cdot \bar{v}_1 \cdot \bar{v}_1^T
-$$
-Se gli autovettori non sono unitari, allora $\exists \bar{x} : \bar{v}_1 \cdot \bar{x} = 1$, per cui utilizzo $\bar{x}$ nella formula di costruzione della matrice $B$:
-$$
-B = A - \lambda_1 \cdot \bar{v}_1 \cdot \bar{x}
-$$
-La matrice $B$ avrà un autovalore nullo (sottratto nell'espressione precedente) con corrispondente autovettore $\bar v_1$. I restanti $n-1$ autovalori $\lambda_2, \dots, \lambda_n$ saranno uguali a quelli della matrice di partenza $A$, mentre i corrispondenti autovettori $\bar u_2, \dots, \bar u_n$ saranno diversi. 
+- $\bar v_1$ è ancora un autovettore di $B$ ed il suo autovalore corrispondente è $0$. 
+- se $(\lambda, \bar v_{\lambda})$ è una autocoppia (non principale) di una matrice simmetrica $A$ allora sarà una autocoppia di $B$.
 
-La power iteration calcola l'autocoppia principale (autovalore più grande): se otteniamo tramite power iteration l'autocoppia principale da $A$, una volta annullato l'autovalore più grande (su $B$) sarà possibile ri-eseguire la power iteration su $B$ ed ottenere il secondo autovalore più grande $\lambda_2$ e il corrispondente autovettore $\bar u_2$. Per ricondurci all'autovettore corrispondente a $\lambda_2$ su $A$ è necessario applicare la seguente formula: 
+È possibile trovare tutte le autocoppie ripetendo iterativamente il metodo:
 $$
-\bar v_2 = (\lambda_1 - \lambda_2) \cdot \bar u_2 + \lambda_1 \cdot (\bar v_1^T \cdot \bar u_2) \cdot \bar v_1
-$$
-Generalizzando per ogni $\bar u_i$ scriviamo
-$$
-\bar v_i = (\lambda_1 - \lambda_i) \cdot \bar u_i + \lambda_1 \cdot (\bar v_1^T \cdot \bar u_i) \cdot \bar v_1 \text{ per } i = 2, \dots, n
+B_{t+1} = B_{t} - \lambda_t \bar{v}_t \bar{v}_t^{T}
 $$
 
+> Osservazione: Se gli autovettori non sono unitari, allora non sarà possibile calcolare la matrice B con l'espressione indicata, bensì si dovrà trovare un vettore $\bar x$ tale che $\bar{v} \cdot \bar{x} = 1$ e quindi calcolare la matrice B come segue: 
+> $$
+> B = A - \lambda_1 \bar{v}_1 \bar{x}^T
+> $$
 
-#### 3.2.5 Procedura 
+> Il professore sostiene che l'autovettore ottenuto dalla power iteration su $B$, che chiameremo $\bar u_i$ non corrisponda all'autovettore su $A$, che chiameremo $\bar v_i$, e che per calcolare l'autovettore originale bisogna applicare la seguente formula: 
+> $$
+> \bar v_i = (\lambda_1 - \lambda_i) \cdot \bar u_i + \lambda_1 \cdot (\bar v_1^T \cdot \bar u_i) \cdot \bar v_1 \text{ per } i = 2, \dots, n
+> $$
 
+
+
+
+#### 3.2.5 Implementazione  
+
+```python
+import numpy as np
+import numpy.linalg as la 
+
+def powi (m, max_iter = 10 ** 3):
+    """ power iteration method """
+    _, n = m.shape
+    x = np.ones(n)
+    for _ in range(max_iter):
+        mx = np.dot(m, x)
+        fn = la.norm(mx, 'fro')
+        x = mx / fn
+        x = x.A[0]
+    ev = np.dot(np.dot(x.T, m), x).item(0)
+    return ev, x
+  
+
+def eigenpairs(m):
+    """ power iteration generalization for all eigenpairs """
+    _, n = m.shape 
+    b = m 
+    evecs = [] 
+    evals = []
+    for i in range(n):
+        lambdai, ei = powi(b)    
+        evecs.append(ei)
+        evals.append(lambdai)
+        eim = np.matrix(ei)
+        b = b - lambdai * eim.T.dot(eim)
+    return evals, evecs 
+
+def main():
+    m = np.matrix([
+            [1,3,5],
+            [2,4,1],
+            [6,1,9],
+        ])
+
+    eigen_values, eigen_vectors = eigenpairs(m)
+
+    for key, val in enumerate(eigen_values):
+        print(f'{key}) \t {val}')
 ```
 
-    def calculate_eigen_values_and_vectors(A):
-        # initialization
-        eigen_value[1], eigen_vector[1] = power_iteration(A)
-        B = A
-        for i = 1 to n-1:
-            # azzeriamo iterativamente tutti gli autovalori di A 
-            B = B - (eigen_value[i] * eigen_vector[i] * transpose(eigen_vector[1]))
-            # utilizzando la power iteration per calcolare i restanti
-            eigen_value[i], eigen_vector[i] = power_iteration(B)
-        return eigen_value, eigen_vector
 
-```
+
+### 3.2 PCA - Principal-Component Analysis
+
+La Principal-Component Analysis (PCA) è una tecnica che prende un dataset relativo ad un insieme di tuple in uno spazio ad alta dimensione e trova le direzioni (assi) lungo il quale le tuple si allineano meglio. Trattiamo l'insieme di tuple come una matrice $M$ e troviamo gli autovettori di $MM^T$ o $M^TM$. La matrice di questi autovettori può essere pensata come una [rotazione rigida](https://it.wikipedia.org/wiki/Rotazione_(matematica)) dello spazio ad alta dimensione. 
 
 
 
-> LEZIONE 7 ore 00:41:11
+#### 3.2.1 Esempio illustrativo
+
+![image-20210409104505569](ch_3_dimensionality_reduction.assets/image-20210409104505569.png)
+
+Rappresentiamo i dati nell'asse su una matrice $4 \times 2$: 
+$$
+M = \begin{bmatrix}
+1 & 2 \\
+2 & 1 \\
+3 & 4 \\
+4 & 3 \\
+\end{bmatrix}
+$$
+Calcoliamo il prodotto matriciale $M^TM$ 
+$$
+M^TM = 
+\begin{bmatrix}
+1 & 2 & 3 & 4 \\
+2 & 1 & 4 & 3 \\
+\end{bmatrix}
+\begin{bmatrix}
+1 & 2 \\
+2 & 1 \\
+3 & 4 \\
+4 & 3 \\
+\end{bmatrix}
+= 
+\begin{bmatrix}
+30 & 28 \\
+28 & 30 \\
+\end{bmatrix}
+$$
+Troviamo gli autovalori come fatto nel paragrafo 3.2.2 
+$$
+(30 - \lambda)(30 - \lambda) - 28 \times 28 = 0
+$$
+Le cui soluzioni sono $\lambda_1 = 58$ e $\lambda_2 = 2$. Troviamo gli autovettori risolvendo l'equazione lineare per ogni autovalore:
+$$
+\text{ per } \lambda_1 = 58 \text{ abbiamo } e_1 = \begin{bmatrix} 
+\frac{1}{\sqrt{2}} \\
+\frac{1}{\sqrt{2}} \\
+\end{bmatrix}
+$$
+
+$$
+\text{ per } \lambda_2 = 2 \text{ abbiamo } e_2 = \begin{bmatrix} 
+- \frac{1}{\sqrt{2}} \\
+\frac{1}{\sqrt{2}} \\
+\end{bmatrix}
+$$
+
+Costruiamo la matrice $E$ affiancando gli autovettori trovati e posizionando per primo l'autovettore principale: 
+$$
+E = \begin{bmatrix}
+\frac{1}{\sqrt{2}} & - \frac{1}{\sqrt{2}} \\
+\frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}} \\
+\end{bmatrix}
+$$
+Ogni matrice con vettori ortonormali (vettori unitari ed ortogonali l'un l'altro) rappresenta una rotazione e/o riflessione degli assia di uno spazio Euclideo. Se moltiplichiamo la matrice $M$ per la matrice $E$ (rotazione) otteniamo:
+$$
+ME = \begin{bmatrix}
+1 & 2 \\
+2 & 1 \\
+3 & 4 \\
+4 & 3 \\
+\end{bmatrix}
+\begin{bmatrix}
+\frac{1}{\sqrt{2}} & - \frac{1}{\sqrt{2}} \\
+\frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+\frac{3}{\sqrt{2}} & \frac{1}{\sqrt{2}}  \\
+\frac{3}{\sqrt{2}} & \frac{-1}{\sqrt{2}} \\
+\frac{7}{\sqrt{2}} & \frac{1}{\sqrt{2}}  \\
+\frac{7}{\sqrt{2}} & \frac{-1}{\sqrt{2}} \\
+\end{bmatrix}
+$$
+Nel caso in esempio, la matrice rappresenta una rotazione di $45°$ in senso antiorario. 
+
+![image-20210409111555059](ch_3_dimensionality_reduction.assets/image-20210409111555059.png)
+
+I punti mantengono le proporzioni dopo la rotazione, vediamolo graficamente: 
+
+![image-20210409111013304](ch_3_dimensionality_reduction.assets/image-20210409111013304.png)
+
+
+
+#### 3.2.2 Ridurre la dimensionalità 
+
+$ME$ corrisponde ai punti di $M$ trasformati in uno spazio di nuove coordinate. In questo spazio, il **primo asse** (quello che corrisponde al più grande autovalore) è il più significativo; formalmente, la varianza di un punto lungo questo asse è la più grande. Il **secondo asse** corrisponde al secondo autovalore, è il successivo secondo autovalore più significativo nello stesso senso. Questo pattern si presenta per ogni autocoppia. Per trasformare $M$ in uno spazio con meno dimensioni, basta preservare le dimensioni che usano gli autovettori associati ai più alti autovalori e cancellare gli altri. Sia $E_k$ la matrice formata dalle prime $k$ colonne di $E$. Allora $ME_k$ è una rappresentazione di $M$ a $k$ dimensioni. 
+
+Nel nostro esempio, rimuoviamo il secondo autovettore $e_2$ dalla matrice $E$ e ricalcoliamo il prodotto $EM$: 
+$$
+ME_1 = \begin{bmatrix}
+1 & 2 \\
+2 & 1 \\
+3 & 4 \\
+4 & 3 \\
+\end{bmatrix}
+\begin{bmatrix}
+\frac{1}{\sqrt{2}} \\
+\frac{1}{\sqrt{2}} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+\frac{3}{\sqrt{2}} \\
+\frac{3}{\sqrt{2}} \\
+\frac{7}{\sqrt{2}} \\
+\frac{7}{\sqrt{2}} \\
+\end{bmatrix}
+$$
+Tale procedura ci garantisce un errore di approssimazione minimo. 

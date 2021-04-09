@@ -409,7 +409,7 @@ I punti mantengono le proporzioni dopo la rotazione, vediamolo graficamente:
 
 
 
-#### 3.2.2 Ridurre la dimensionalità 
+#### 3.2.2 Ridurre la dimensionalità con PCA
 
 $ME$ corrisponde ai punti di $M$ trasformati in uno spazio di nuove coordinate. In questo spazio, il **primo asse** (quello che corrisponde al più grande autovalore) è il più significativo; formalmente, la varianza di un punto lungo questo asse è la più grande. Il **secondo asse** corrisponde al secondo autovalore, è il successivo secondo autovalore più significativo nello stesso senso. Questo pattern si presenta per ogni autocoppia. Per trasformare $M$ in uno spazio con meno dimensioni, basta preservare le dimensioni che usano gli autovettori associati ai più alti autovalori e cancellare gli altri. Sia $E_k$ la matrice formata dalle prime $k$ colonne di $E$. Allora $ME_k$ è una rappresentazione di $M$ a $k$ dimensioni. 
 
@@ -434,3 +434,178 @@ ME_1 = \begin{bmatrix}
 \end{bmatrix}
 $$
 Tale procedura ci garantisce un errore di approssimazione minimo. 
+
+
+
+#### 3.2.3 Pseudocodice
+
+```
+	
+	PCA (M, k): 
+		# Sia M una matrice di dati N x d, con ogni riga un vettore dei dati. 
+		# Otteniamo la matrice di covarianza di M (sottraendo la media)
+		Sigma <- sottraiamo la media m da ogni vettore riga (opzionale)
+		autocoppie <- troviamo le autocoppie di Sigma 
+		PC <- prendiamo i k autovettori con gli autovalori più grandi (principal components)
+         # PC sarà una matrice e gli autovettori saranno posizionati in colonna
+         return M * PC 
+		
+```
+
+
+
+### 3.3 SVD - Singular Value Decomposition 
+
+La Singular Value Decomposition (SVD) è una tecnica che permette di ottenere una rappresentazione a basse dimensioni di una matrice ad alte dimensioni e funziona per qualsiasi matrice. Maggiore è la riduzione, minore sarà l'accuratezza della approssimazione. 
+
+
+
+#### 3.3.1 Definizione di SVD
+
+Sia $M$ una matrice $m \times n$, e sia $r$ il suo rango. Allora sarà possibile trovare le matrici $U$, $\Sigma$, e $V$ con le seguenti proprietà: 
+
+* $U$ è una *column-orthonormal matrix*, le cui colonne sono vettori unitari (vettori singolari di sinistra). 
+* $V$ è una *column-orthonormal matrix*, le cui colonne sono vettori unitari (vettori singolari di destra). 
+* $\Sigma$ è una matrice diagonale, i cui elementi (nella diagonale) sono chiamati valori singolari di $M$. 
+
+Possiamo scrivere: 
+$$
+M = U \cdot \Sigma \cdot V^T
+$$
+
+
+> Per "column-orthonormal matrix" intendiamo una matrice le cui colonne sono [vettori ortonormali](https://en.wikipedia.org/wiki/Orthonormality), per cui il prodotto scalare tra due colonne distinte arbitrarie è 0. Si ha quindi che $U^TU = V^TV = I$. 
+
+>  Nella decomposizione si farà utilizzo della trasposta della matrice $V$, quindi $V^T$. Essendo $V$ una column-orthonormal matrix e $V^T$ la sua trasposta, allora $V^T$ sarà una row-orthonormal matrix. 
+
+![image-20210409144632170](ch_3_dimensionality_reduction.assets/image-20210409144632170.png)
+
+
+
+#### 3.3.2 Interpretazione della SVD 
+
+Sia $M$ una matrice di dimensione $7 \times 5$ contenente nelle righe gli utenti e nelle colonne i film valutati dagli utenti. Supponiamo che i primi 3 film nelle colonne siano fantascientifici, mentre gli ultimi due siano romantici: 
+$$
+M = \begin{bmatrix}
+1 & 1 & 1 & 0 & 0 \\
+3 & 3 & 3 & 0 & 0 \\
+4 & 4 & 4 & 0 & 0 \\
+5 & 5 & 5 & 0 & 0 \\
+0 & 0 & 0 & 4 & 4 \\
+0 & 0 & 0 & 5 & 5 \\
+0 & 0 & 0 & 2 & 2 \\
+\end{bmatrix}
+$$
+Le prime 4 righe sono linearmente indipendenti tra loro, così come le ultime 3 righe. Di fatto, il rango della matrice risulta essere $r = 2$. Supponiamo di aver già calcolato le tre matrici $U$, $V$ e $\Sigma$, scriviamo l'equazione della decomposizione: 
+$$
+(M)
+\begin{bmatrix}
+1 & 1 & 1 & 0 & 0 \\
+3 & 3 & 3 & 0 & 0 \\
+4 & 4 & 4 & 0 & 0 \\
+5 & 5 & 5 & 0 & 0 \\
+0 & 0 & 0 & 4 & 4 \\
+0 & 0 & 0 & 5 & 5 \\
+0 & 0 & 0 & 2 & 2 \\
+\end{bmatrix}
+= 
+(U)
+\begin{bmatrix}
+.14 & 0 \\
+.42 & 0 \\
+.56 & 0 \\
+.70 & 0 \\
+0 & .60 \\
+0 & .75 \\
+0 & .30 \\
+\end{bmatrix}
+(\Sigma)
+\begin{bmatrix}
+12.4 & 0 \\
+0 & 9.5  \\
+\end{bmatrix}
+(V^T)
+\begin{bmatrix}
+.58 & .58 & .58 & 0 & 0 \\
+0 & 0 & 0 & .71 & .71 \\
+\end{bmatrix}
+$$
+La chiave di lettura della decomposizione sta nell'interpretare le $r$ colonne delle matrici $U$, $V$ e $\Sigma$ come **concetti** nascosti nella matrice di partenza $M$. Nell'esempio i concetti sono molto chiari, le due colonne indicano i due generi principali: fantascientifico e romantico. La matrice $U$ connette gli utenti (righe di $M$) ai generi (concetti), mentre la matrice $V$ conette i film (colonne di $M$) ai concetti. Infine, la matrice $\Sigma$ indica la forza di ogni concetto. 
+
+L'esempio è particolarmente banale, nella pratica spesso la dimensione desiderata è inferiore al rango della matrice, per cui è necessario applicare alcune modifiche ed ottenere una decomposizione non esatta, ma che approssima al meglio la matrice $M$. È necessario eliminare dalla decomposizione esatta quelle colonne di $U$ e $V$ che corrispondono ai valori singolari più piccoli (concetti meno affermati) così da ottenere una buona approssimazione. 
+
+Modifichiamo leggermente la matrice d'esempio e vediamo cosa succede: 
+$$
+M = \begin{bmatrix}
+1 & 1 & 1 & 0 & 0 \\
+3 & 3 & 3 & 0 & 0 \\
+4 & 4 & 4 & 0 & 0 \\
+5 & 5 & 5 & 0 & 0 \\
+0 & 2 & 0 & 4 & 4 \\
+0 & 0 & 0 & 5 & 5 \\
+0 & 1 & 0 & 2 & 2 \\
+\end{bmatrix}
+$$
+Il rango della matrice $M$ è adesso $r = 3$ a causa delle modifiche: le ultime tre colonne non sono più tutte linearmente indipendenti. Tuttavia i concetti rimangono gli stessi. Vediamo cosa succede alla decomposizione: 
+$$
+(U)
+\begin{bmatrix}
+.13 & .02 & -.01 \\
+.41 & .07 & -.03 \\
+.55 & .09 & -.04 \\
+.68 & .11 & -.05 \\
+.15 & -.59 & .65 \\
+.07 & -.73 & -.67 \\
+.07 & -.29 & .32 \\
+\end{bmatrix}
+(\Sigma)
+\begin{bmatrix}
+12.4 & 0 & 0 \\
+0 & 9.5  & 0 \\
+0 & 0  & 1.3 \\
+\end{bmatrix}
+(V^T)
+\begin{bmatrix}
+.58 & .59 & .56 & .09 & .09  \\
+.12 & -.02 & .12 & .69 & .69 \\
+.40 & -.80 & .40 & .09 & .09 \\
+\end{bmatrix}
+$$
+Il terzo valore singolare risulta molto piccolo rispetto ai primi due, poiché di fatto non è realmente incisivo (nel caso analizzato non indica nessun genere), vorremmo quindi eliminarlo. 
+
+
+
+#### 3.3.3 Ridurre la dimensionalità con SVD
+
+Supponiamo di voler rappresentare una matrice molto grande attraverso le sue componenti $U$, $V$ e $\Sigma$ ottenute attraverso la SVD. Tuttavia, anche queste ultime risultano essere molto grandi da conservare. Il miglior modo per ridurre la dimensionalità delle tre matrici è azzerare il valore singolare di $\Sigma$ più piccolo e, di conseguenze, eliminare le corrispondenti colonne nelle matrici $U$ e $V$. 
+
+Riprendiamo l'esempio precedente: supponiamo di voler passare da 3 dimensioni a 2. Il valore singolare più piccolo risulta essere 1.3, per cui lo azzeriamo e rimuovamo la terza colonna di $U$ e la terza riga di $V^T$: 
+$$
+\hat{M} = (U)
+\begin{bmatrix}
+.13 & .02  \\
+.41 & .07  \\
+.55 & .09  \\
+.68 & .11  \\
+.15 & -.59 \\
+.07 & -.73 \\
+.07 & -.29 \\
+\end{bmatrix}
+(\Sigma)
+\begin{bmatrix}
+12.4 & 0 & 0 \\
+0 & 9.5  & 0 \\
+\end{bmatrix}
+(V^T)
+\begin{bmatrix}
+.58 & .59 & .56 & .09 & .09  \\
+.12 & -.02 & .12 & .69 & .69 \\
+\end{bmatrix}
+$$
+La matrice $\hat M$ risultante dal prodotto $U\Sigma V^T$ non coincide perfettamente con $M$, ma ne è una buona approssimazione. Se calcoliamo l'RMSE (root mean square error) attraverso la norma di Frobenius sulla matrice $M - \hat M$ otteniamo: 
+$$
+\text{RMSE} = ||M - \hat M||_F = \sqrt{ \sum_{ij} (M_{ij} - \hat{M}_{ij})^2}
+$$
+È possibile dimostrare attraverso un teorema che $\hat{M}$ ottenuta rimuovendo i valori singolari più piccoli dalla decomposizione, e calcolando l'errore di approssimazione attraverso la metrica RMSE è la "***best low rank approximation***" di $M$, ovvero l'approssimazione migliore ottenibile dalle 3 matrici $U$, $V$ e $\Sigma$. 
+
+p 423 del libro. 

@@ -530,7 +530,7 @@ $$
 0 & 0 & 0 & .71 & .71 \\
 \end{bmatrix}
 $$
-La chiave di lettura della decomposizione sta nell'interpretare le $r$ colonne delle matrici $U$, $V$ e $\Sigma$ come **concetti** nascosti nella matrice di partenza $M$. Nell'esempio i concetti sono molto chiari, le due colonne indicano i due generi principali: fantascientifico e romantico. La matrice $U$ connette gli utenti (righe di $M$) ai generi (concetti), mentre la matrice $V$ conette i film (colonne di $M$) ai concetti. Infine, la matrice $\Sigma$ indica la forza di ogni concetto. 
+La chiave di lettura della decomposizione sta nell'interpretare le $r$ colonne delle matrici $U$, $V$ e $\Sigma$ come **concetti** nascosti nella matrice di partenza $M$. Nell'esempio i concetti sono molto chiari, le due colonne indicano i due generi principali: fantascientifico e romantico. La matrice $U$ connette gli utenti (righe di $M$) ai generi (concetti), mentre la matrice $V$ connette i film (colonne di $M$) ai concetti. Infine, la matrice $\Sigma$ indica la forza di ogni concetto. 
 
 L'esempio è particolarmente banale, nella pratica spesso la dimensione desiderata è inferiore al rango della matrice, per cui è necessario applicare alcune modifiche ed ottenere una decomposizione non esatta, ma che approssima al meglio la matrice $M$. È necessario eliminare dalla decomposizione esatta quelle colonne di $U$ e $V$ che corrispondono ai valori singolari più piccoli (concetti meno affermati) così da ottenere una buona approssimazione. 
 
@@ -577,7 +577,7 @@ Il terzo valore singolare risulta molto piccolo rispetto ai primi due, poiché d
 
 #### 3.3.3 Ridurre la dimensionalità con SVD
 
-Supponiamo di voler rappresentare una matrice molto grande attraverso le sue componenti $U$, $V$ e $\Sigma$ ottenute attraverso la SVD. Tuttavia, anche queste ultime risultano essere molto grandi da conservare. Il miglior modo per ridurre la dimensionalità delle tre matrici è azzerare il valore singolare di $\Sigma$ più piccolo e, di conseguenze, eliminare le corrispondenti colonne nelle matrici $U$ e $V$. 
+Supponiamo di voler rappresentare una matrice molto grande attraverso le sue componenti $U$, $V$ e $\Sigma$ ottenute attraverso la SVD. Tuttavia, anche queste ultime risultano essere molto grandi da conservare. Il miglior modo per ridurre la dimensionalità delle tre matrici è azzerare il valore singolare di $\Sigma$ più piccolo e, di conseguenza, eliminare le corrispondenti colonne nelle matrici $U$ e $V$. 
 
 Riprendiamo l'esempio precedente: supponiamo di voler passare da 3 dimensioni a 2. Il valore singolare più piccolo risulta essere 1.3, per cui lo azzeriamo e rimuovamo la terza colonna di $U$ e la terza riga di $V^T$: 
 $$
@@ -606,6 +606,147 @@ La matrice $\hat M$ risultante dal prodotto $U\Sigma V^T$ non coincide perfettam
 $$
 \text{RMSE} = ||M - \hat M||_F = \sqrt{ \sum_{ij} (M_{ij} - \hat{M}_{ij})^2}
 $$
-È possibile dimostrare attraverso un teorema che $\hat{M}$ ottenuta rimuovendo i valori singolari più piccoli dalla decomposizione, e calcolando l'errore di approssimazione attraverso la metrica RMSE è la "***best low rank approximation***" di $M$, ovvero l'approssimazione migliore ottenibile dalle 3 matrici $U$, $V$ e $\Sigma$. 
+Calcolando l'errore di approssimazione attraverso la metrica RMSE, è possibile dimostrare che $\hat{M}$ ottenuta rimuovendo i valori singolari più piccoli, è la "***best low rank approximation***" di $M$, ovvero l'approssimazione migliore ottenibile dalle 3 matrici $U$, $V$ e $\Sigma$. 
 
-p 423 del libro. 
+
+
+#### 3.3.4 Best low rank approximation theorem
+
+Sia $A = U\Sigma V^T$ e $B=USV^T$ dove $S$ è una matrice diagonale di dimensioni $r \times r$ con: 
+$$
+s_{ii} = \begin{cases}
+\sigma_ii \text{ if } i = 1, \dots, k \\
+0 \text{ altrimenti }
+\end{cases}
+$$
+allora $B$ è la migliore apporssimazione di rango $\rho = k$ di $A$, ovvero: 
+$$
+B = \text{arg}\min_B || A - B ||_F \text{ dove } \rho(B) = k
+$$
+ 
+
+#### 3.3.5 Legami con la decomposizione spettrale
+
+La SVD è legata alla *autodecomposizone* o *decomposizione spettrale* di una matrice. Per il *teorema spettrale* abbiamo che: 
+$$
+AA^T = X \Lambda X^T
+$$
+Dove $\Lambda$ (diagonale) ed $X$ contengono rispettivamente gli autovalori ed autovettori della matrice $AA^T$. Calcolando la SVD di $A$ abbiamo: 
+$$
+AA^T = \left( U\Sigma V^T \right)(V \Sigma^T U^T)
+$$
+Essendo $\Sigma$ una matrice diagonale, abbiamo che $\Sigma = \Sigma^T$, continuiamo: 
+$$
+AA^T = U\Sigma V^T V \Sigma U^T = U\Sigma \Sigma U^T = U\Sigma^2 U^T
+$$
+In analogia alla decomposizione spettrale, possiamo dire che la matrice $\Sigma^2$ contiene gli autovalori della matrice $AA^T$, mentre la matrice $U$ ne contiene gli autovettori. Ripetendo lo stesso procedimento con $A^TA$ otterremo: 
+$$
+A^TA = V\Sigma^2 V^T
+$$
+Per cui vi è un legame tra le due decomposizioni. 
+
+
+
+#### 3.3.6  Azzerare i valori singolari piccoli funziona
+
+Dato che $A = U\Sigma V^T$, allora 
+$$
+A = \sigma_1 u_1 v_1^T + \dots + \sigma_k u_k v_k^T
+$$
+
+> Dato che $u_i$ è di dimensione $n \times 1$ e $v^T_i$ è di dimensione $1 \times m$, allora il prodotto è una matrice. 
+
+Settare $\sigma_i = 0$ (dove $\sigma_i$ è il valore singolare più piccolo) funziona perché essendo $u_i$ e $v_i$ vettori unitari, il prodotto con il valore $\sigma_i$ scala i valori della matrice. Quindi eliminare il $\sigma_i$ più piccolo introduce meno errore di approssimazione. 
+
+
+
+#### 3.3.7 Quanti valori singolari mantenere
+
+Una regola empirica per scegliere il numero $k$ di valori singolari da mantenere consiste nel mantenere almeno l'$80$% (o il $90$%) dell'energia. Ovvero, supponendo che il rango della matrice $A$ sia $\rho(A)=r$ e di voler ridurre la dimensione della decomposizione, allora si sceglie $k$ tale che: 
+$$
+\sum_{i=1}^k \sigma_i \ge \left( \sum_{i=1}^r \sigma_i \right) \cdot 0.8
+$$
+
+
+#### 3.3.8 Complessità della decomposizione
+
+I migliori algoritmi di calcolo della decomposizione SVD hanno una complessità temporale $O(nm^2)$ o $O(mn^2)$, a seconda di quale è minore. Tuttavia vi è meno lavoro necessario se si vogliono ottenere solo i valori singolari (o i primi $k$ valori singolari), o se la matrice è sparsa. 
+
+
+
+#### 3.3.9 Query utilizzando i concetti
+
+Consideriamo la matrice dell'esempio precedente: 
+$$
+(M)
+\begin{bmatrix}
+1 & 1 & 1 & 0 & 0 \\
+3 & 3 & 3 & 0 & 0 \\
+4 & 4 & 4 & 0 & 0 \\
+5 & 5 & 5 & 0 & 0 \\
+0 & 0 & 0 & 4 & 4 \\
+0 & 0 & 0 & 5 & 5 \\
+0 & 0 & 0 & 2 & 2 \\
+\end{bmatrix}
+= 
+(U)
+\begin{bmatrix}
+.14 & 0 \\
+.42 & 0 \\
+.56 & 0 \\
+.70 & 0 \\
+0 & .60 \\
+0 & .75 \\
+0 & .30 \\
+\end{bmatrix}
+(\Sigma)
+\begin{bmatrix}
+12.4 & 0 \\
+0 & 9.5  \\
+\end{bmatrix}
+(V^T)
+\begin{bmatrix}
+.58 & .58 & .58 & 0 & 0 \\
+0 & 0 & 0 & .71 & .71 \\
+\end{bmatrix}
+$$
+Supponiamo che un nuovo utente abbia valutato un solo film, il primo, e che lo abbia valutato positivamente. Indichiamo il nuovo utente con il vettore riga $q = [4, 0, 0, 0, 0]$.  È possibile mappare le valutazioni del nuovo utente nello "spazio dei concetti" moltiplicandolo per la matrice $V$ della decomposizione: 
+$$
+qV = [4,0,0,0,0] 
+\cdot 
+\begin{bmatrix}
+.58 & 0 \\
+.58 & 0 \\
+.58 & 0 \\
+0 & .71 \\
+0 & .71 \\
+\end{bmatrix}
+= 
+[2.32, 0]
+$$
+Dato che la prima componente del vettore risultante vale 2.32, mentre la seconda vale 0, possiamo derivarne che il nuovo utente è interessato a film di fantascienza (la prima categoria), mentre non è interessato a film d'amore. Il vettore risultante è una rappresentazione del vettore delle valutazioni nello spazio dei concetti. Possiamo mappare il vettore $qV$ nuovamente nello spazio dei film moltiplicandolo per $V^T$
+$$
+qVV^T = [2.32, 0] 
+\cdot 
+\begin{bmatrix}
+.58 & .58 & .58 & 0 & 0 \\
+0 & 0 & 0 & .71 & .71 \\
+\end{bmatrix}
+= 
+[1.35, 1.35, 1.35, 0, 0]
+$$
+Questo ci suggerisce che il nuovo utente potrebbe essere interessato al secondo ed al terzo film. Un altro tipo di query consiste nel trovare utenti con interessi simili, mappando le loro valutazioni nello spazio dei concetti e calcolando la similarità tra i due vettori attraverso la distanza del coseno, che ci fornisce la differenza delle direzioni dei vettori. 
+
+Supponiamo che due vettori delle valutazioni mappati nello spazio dei concetti assumano valori $[2.32, 0]$ e $[1.74, 0]$ rispettivamente. I due vettori hanno la stessa direzione: entrambi si trovano sull'asse del concetto "fantascienza", per cui hanno gusti analoghi e la distanza del coseno è 0. 
+
+
+
+#### 3.3.10 Conclusioni
+
+La SVD è una buona decomposizione grazie al teorema sulla approssimazione low-rank ottimale. Tuttavia è di difficile interpretazione, poiché i vettori singolari specificano combinazioni lineari di colonne e righe di input, e le matrici ottenute non sono sparse, quindi mantenerle in memoria potrebbe essere problematico. 
+
+
+
+### 3.4 CUR decomposition
+
+37:38

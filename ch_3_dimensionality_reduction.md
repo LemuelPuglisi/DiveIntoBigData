@@ -623,7 +623,7 @@ allora $B$ è la migliore apporssimazione di rango $\rho = k$ di $A$, ovvero:
 $$
 B = \text{arg}\min_B || A - B ||_F \text{ dove } \rho(B) = k
 $$
- 
+
 
 #### 3.3.5 Legami con la decomposizione spettrale
 
@@ -749,4 +749,138 @@ La SVD è una buona decomposizione grazie al teorema sulla approssimazione low-r
 
 ### 3.4 CUR decomposition
 
-37:38
+Spesso la matrice da decomporre è molto sparsa. Utilizzando la decomposizione SVD, le matrici $U$, $\Sigma$ e $V$ sono dense. Idealmente si vuole che la decomposizione di una matrice sparsa sia altrettanto sparsa. La decomposizione CUR cerca di garantire questa proprietà. Questo metodo seleziona un insieme di colonne $C$ e un insieme di righe $R$ che giocano il ruolo di $U$ e $V^T$ nella SVD. La scelta delle righe e delle colonne è fatta in maniera casuale con una distribuzione che dipende dalla norma di Frobenius. Tra le matrici $C$ ed $R$ vi è una matrice quadrata $U$ costruita come pseudo-inversa dell'intersezione delle righe e delle colonne scelte. 
+
+
+
+#### 3.4.1 Definizione di CUR 
+
+Sia $M$ una matrice di dimensione $m \times n$. Si scelgano $r$ concetti da utilizzare nella decomposizione. Una decomposizione $CUR$ di $M$ è formata da:
+
+* Una matrice $C$ di dimensione $m \times r$ formata da $r$ colonne prese casualmente da $M$; 
+* Una matrice $R$ di dimensione $r \times n$ formata da $r$ righe prese casualmente da $M$; 
+* Una matrice $U$ di dimensione $r \times r$ costruita da $C$ ed $R$. 
+
+La matrice $U$ viene costruita mediante il seguente processo: 
+
+* Sia $W$ una matrice $r \times r$ data dall'intersezione di $C$ ed $R$, ovvero l'elemento $W_{ij}$ corrisponde all'elemento di $M$ la cui colonna è la $j$-esima colonna di $C$ e la cui riga è la $i$-esima riga di $R$; 
+* Si effettua la decomposizione SVD su $W$, quindi $W=X\Sigma Y^T$; 
+* Si calcola la matrice pseudoinversa $\Sigma^+$ di Moore-Penrose della matrice diagonale $\Sigma$, dove ogni elemento della diagonale non nullo $\sigma_{ii} \ne 0$ si rimpiazza con l'elemento $\frac{1}{\sigma_{ii}}$. Se l'elemento della diagonale è nullo, allora si lascia nullo.  
+* Si ottiene $U=Y(\Sigma^+)^2X^T$.  
+
+
+
+> **Perché la pseudoinversa funziona?**
+>
+> Supponiamo che $W = XYZ$, allora deve verificarsi che $W^{-1} = X^{-1}Y^{-1}Z^{-1}$. Dato che scomponiamo $W$ con la singular value decomposition, allora $X$ e $X$ saranno ortonormali, per cui $X^{-1} = X^T$ e $Z^{-1} = X^T$. Poiché la matrice $Y$ è diagonale, allora $Z^{-1} = \frac{1}{Z}$, dove gli elementi in $Z$ nulli vengono però mantenuti nulli (altrimenti si avrebbe una divisione per zero). Se $W$ è non singolare (determinante diverso da zero, di conseguenza esiste l'inversa $W^{-1}$)  allora la pseudo-inversa coincide con la vera inversa. 
+
+
+
+#### 3.4.2 Teorema [Drineas et al.]
+
+Sia $CUR$ la decomposizione di $A$ calcolata in tempo $O(mn)$, allora si dimostra che: 
+$$
+||A - CUR||_F \le ||A - A_k||_F + \epsilon||A||_F
+$$
+Con probabilità $1 - \delta$, selezionando: 
+$$
+O\left(k \frac{ log(\frac{1}{\delta})}{\epsilon^2} \right) \text{ colonne e }
+O\left(k^2 \frac{ log^3(\frac{1}{\delta})}{\epsilon^6} \right) \text{ righe}
+$$
+
+> Nella pratica basta selezionare $4 \times k$ righe e colonne, dove $k$ è il valore della "best k-rank approximation" nell'espressione 54, calcolata attraverso la decomposizione SVD azzerando gli $(r-k)$ valori singolari più piccoli. 
+
+Fissati $\epsilon$ e $\delta$ arbitrariamente, tale teorema ci fornisce il numero di righe e colonne da selezionare per dare un limite superiore all'errore di approssimazione con una certa probabilità. 
+
+
+
+#### 3.4.3 Selezionare righe e colonne
+
+Anche se la scelta delle righe e delle colonne è casuale, tale scelta deve essere direzionata in qualche modo tale da selezionare le righe e le colonne più importanti. La misura di importanza è data dal quadrato della norma di Frobenius: 
+$$
+f = \sum_{ij} m_{ij}^2
+$$
+La probabilità $p_i$ di scegliere la $i$-esima riga di $M$ è calcolata come segue: 
+$$
+p_i = \sum_{j} \frac{m_{ij}^2}{f}
+$$
+La probabilità $q_i$ di scegliere la $i$-esima colonna di $M$ è calcolata come segue: 
+$$
+q_i = \sum_{j} \frac{m_{ji}^2}{f}
+$$
+Data la distribuzione di probabilità di righe e colonne, essendo che ogni selezione è indipendente dalle altre, notiamo che le righe con più alta probabilità possono essere selezionate più volte; torneremo più avanti su questo aspetto. 
+
+Una volta selezionata con probabilità assegnata una colonna $i$ dalla matrice $M$, gli elementi di tale colonna vengono scalati (quindi divisi) di un fattore $\sqrt{rq_i}$, la colonna scalata diventa poi una colonna della matrice $C$.   Allo stesso modo, selezionata una riga $i$ con probabilità assegnata dalla matrice $M$, gli elementi di tale riga vengono scalati di un fatore $\sqrt{rp_i}$, quindi la riga scalata diventa una riga della matrice $R$. 
+
+
+
+#### 3.4.4 Teorema sull'upper bound dell'approssimazione
+
+Ipotizziamo di selezionare un numero analogo di righe e colonne $c = r = O(\frac{k\log k}{\epsilon^2})$ attraverso le distribuzioni di probabilità assegnate dall'algoritmo CUR. Costruiamo quindi le matrici $C$, $U$ ed $R$, allora: 
+$$
+P(||A - CUR||_F \le (2 + \epsilon) ||A-A_k||_F) \approx 0.98
+$$
+
+
+#### 3.4.5 Righe e colonne duplicate 
+
+La decomposizione CUR è vantaggiosa perché facile da interpretare (i vettori della base sono righe e colonne della matrice) ed inoltre ha una base sparsa. Tuttavia, è possibile riscontrare duplicazioni su colonne e righe a causa della distribuzione di probabilità basata sulle norme: colonne e righe con norme alte verranno selezionate spesso. 
+
+Supponiamo che la matrice $C$ abbia $k$ colonne duplicate, possiamo ridurre queste $k$ colonne ad una sola colonna, diminuendo così il numero totale di colonne di $C$. Allo stesso modo, se $R$ ha $k$ righe duplicate, allora è possibile ridurle ad una sola riga, diminuendo il numero di righe totale di $R$. Tuttavia, tale riga o colonna rimanente dovrà essere scalata moltiplicando ad ogni elemento il valore $\sqrt{k}$. 
+
+Supponiamo che la matrice $C$ di dimensione $m \times r$ diventi di dimensione $m \times r'$ dopo la rimozione dei duplicati. Supponiamo che la matrice $R$ di dimensione $r \times n$ diventi di dimensione $r'' \times n$ dopo la rimozione dei duplicati. Se il numero di duplicati è diverso in $C$ ed $R$ ($r' \ne r''$) allora la matrice di intersezione non sarà quadrata. Possiamo comunque calcolare la pseudoinversa dalla decomposizione di $W=X\Sigma Y^T$, dove $\Sigma$ è una matrice diagonale con alcune colonne o righe nulle (dipeso dalla dimensione maggiore). Si calcola la pseudoinversa canonicamente, e si esegue la trasposizione del risultato. Supponiamo: 
+$$
+\Sigma = \begin{bmatrix}
+2 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 3 & 0 \\
+\end{bmatrix}
+$$
+Allora: 
+$$
+\Sigma^{+} = \begin{bmatrix}
+\frac{1}{2} & 0 & 0 \\
+0 & 0 & 0 \\
+0 & 0 & \frac{1}{3} \\
+0 & 0 & 0 \\
+\end{bmatrix}
+$$
+
+
+#### 3.4.6 Ottimizzazione dell'algoritmo
+
+Si dimostra che per migliorare l'accuratezza della decomposizione (sulla base della norma di Frobenius), è sufficiente selezionare righe (o colonne) che siano ortogonali (quindi linearmente indipendenti) tra di loro. 
+
+
+
+### 3.5 NNMF - Non-negative matrix factorization
+
+Sia $A$ una matrice di dimensione $f \times n$, la tecnica NNMF ci permette di ottenere una decomposizione: 
+$$
+A \approx WH
+$$
+Dove $W$ ed $H$ sono due matrici con elementi non negativi, ovvero $w_{fk}, h_{k,n} \ge 0$. Il rango $k$ della fattorizzazione è scelto in modo tale che $(f+n)k < fn$ ed il prodotto $WH$ è una rappresentazione compressa di $A$. La non-negatività delle matrici $W$ ed $H$ induce sparsità. 
+
+
+
+#### 3.5.1 Definizione di NNMF 
+
+Sia $A$ una matrice di dimensione $f \times n$ dove $f$ indica il numero di feature ed $n$ indica il numero di osservazioni. Con $a_i$ indichiamo l'$i$-esimo vettore colonna estratto dalla matrice $A$, per cui corrisponde all'$i$-esima osservazione: 
+$$
+a_i = \begin{bmatrix}
+a_{1i} \\
+a_{2i} \\
+\dots  \\
+a_{fi} \\
+\end{bmatrix}\text{  } 
+a_i \in \R_{+}^f
+$$
+Chiamiamo $W$ di dimensione $f \times k$ la matrice *dizionario*, dove in generale con $w_{fk}$ indichiamo un coefficiente della matrice e con $w_f$ indichiamo un dizionario / vettore base con $k$ elementi. 
+
+Chiamiamo $H$ di dimensione $k \times n$ la matrice di *attivazione / espansione*, dove $h_i$ è un vettore colonna di coefficienti di attivazione per l'osservazione $a_i$. Scriviamo: 
+$$
+a_{ij} \approx \sum_{k=1}^k \left( w_{ik} \cdot h_{kj}\right) = w_i \cdot h_j
+$$
+Quindi $h_k$ è il vettore riga di coefficienti di attivazione per il vettore base $w_f$  (???????????????)
+
+continua a 1:20:00

@@ -855,17 +855,21 @@ Si dimostra che per migliorare l'accuratezza della decomposizione (sulla base de
 
 ### 3.5 NNMF - Non-negative matrix factorization
 
-Sia $A$ una matrice di dimensione $f \times n$, la tecnica NNMF ci permette di ottenere una decomposizione: 
+Sia $A$ una matrice di dimensione $f \times n$, in cui le $n$ *colonne* della matrice rappresentano le osservazioni di un insieme di dati, mentre le $f$ righe della matrice sono le corrispondenti *feature*. La tecnica NNMF ci permette di ottenere una decomposizione: 
 $$
 A \approx WH
 $$
-Dove $W$ ed $H$ sono due matrici con elementi non negativi, ovvero $w_{fk}, h_{k,n} \ge 0$. Il rango $k$ della fattorizzazione è scelto in modo tale che $(f+n)k < fn$ ed il prodotto $WH$ è una rappresentazione compressa di $A$. La non-negatività delle matrici $W$ ed $H$ induce sparsità. 
+Vogliamo ridurre il numero di feature da $f$ a $k$. Le matrici avranno dimensione $W \in \R^{f \times k}$ e $H \in \R^{k \times n}$. L'interpretazione di $W$, chiamata anche ***matrice dizionario***, consiste nel considerare ogni colonna come un vettore *base*, quindi un vettore che affiora frequentemente nelle osservazioni. 
+
+L'interpretazione di $H$, chiamata anche ***matrice di attivazione*** o ***di espasione***, consiste nel considerare ogni colonna come coordinate di una osservazione rispetto alla base $W$. Quindi ci permette di ricostruire una approssimazione dell'osservazione originale attraverso una combinazione lineare delle basi in $W$.
+
+$W$ ed $H$ sono due matrici con elementi non negativi, ovvero $w_{fk}, h_{k,n} \ge 0$. Il rango $k$ della fattorizzazione è scelto in modo tale che $(f+n)k < fn$ ed il prodotto $WH$ è una rappresentazione compressa di $A$. La non-negatività delle matrici $W$ ed $H$ induce *sparsità*. 
 
 
 
 #### 3.5.1 Definizione di NNMF 
 
-Sia $A$ una matrice di dimensione $f \times n$ dove $f$ indica il numero di feature ed $n$ indica il numero di osservazioni. Con $a_i$ indichiamo l'$i$-esimo vettore colonna estratto dalla matrice $A$, per cui corrisponde all'$i$-esima osservazione: 
+Sia $A \in \R^{f \times n}$. Con $a_i$ indicheremo l'$i$-esima *colonna* di $A$
 $$
 a_i = \begin{bmatrix}
 a_{1i} \\
@@ -875,12 +879,46 @@ a_{fi} \\
 \end{bmatrix}\text{  } 
 a_i \in \R_{+}^f
 $$
-Chiamiamo $W$ di dimensione $f \times k$ la matrice *dizionario*, dove in generale con $w_{fk}$ indichiamo un coefficiente della matrice e con $w_f$ indichiamo un dizionario / vettore base con $k$ elementi. 
-
-Chiamiamo $H$ di dimensione $k \times n$ la matrice di *attivazione / espansione*, dove $h_i$ è un vettore colonna di coefficienti di attivazione per l'osservazione $a_i$. Scriviamo: 
+Sia $W \in R^{f \times k}$. Con $w_i$ indicheremo l'$i$-esima colonna di $W$ 
 $$
-a_{ij} \approx \sum_{k=1}^k \left( w_{ik} \cdot h_{kj}\right) = w_i \cdot h_j
+w_i = \begin{bmatrix}
+w_{1i} \\
+w_{2i} \\
+\dots  \\
+w_{fi} \\
+\end{bmatrix}\text{  } 
+w_i \in \R_{+}^f
 $$
-Quindi $h_k$ è il vettore riga di coefficienti di attivazione per il vettore base $w_f$  (???????????????)
+In generale $k < r$. Il vettore colonna $w_i$ è un *vettore base*.
 
-continua a 1:20:00
+Sia $H \in R^{k \times n}$. Con $h_j$ indicheremo la $j$-esima colonna di $H$
+$$
+h_j = \begin{bmatrix}
+h_{1j} \\
+h_{2j} \\
+\dots  \\
+h_{kj} \\
+\end{bmatrix}\text{  } 
+h_j \in \R_{+}^k
+$$
+Il vettore colonna $h_j$ corrisponde all'osservazione $a_j$ rappresentata secondo la base formata dai $k$ vettori colonna della matrice $W$. 
+
+Approssimeremo la feature $i$-esima della $j$-esima osservazione della matrice $A$ attraverso il prodotto scalare tra la riga $i$-esima della matrice $W$, che corrisponde all'$i$-esima componente di ogni vettore base, per la $j$-esima colonna della matrice $H$, ovvero la $j$-esima rappresentata attraverso la base $W$. 
+$$
+a_{ij} \approx 
+\begin{bmatrix}
+w_{i1} & w_{i2} & \dots & w_{ik} \\
+
+\end{bmatrix}
+\begin{bmatrix}
+h_{1j} \\
+h_{2j} \\
+\dots \\
+h_{k_j}
+\end{bmatrix}
+
+= \sum_{k=1}^k \left( w_{ik} \cdot h_{kj}\right)
+$$
+
+
+> Slide 83

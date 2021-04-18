@@ -921,4 +921,73 @@ h_{k_j}
 $$
 
 
-> Slide 83
+
+#### 3.5.2 Legame con Probabilistic Latent Semantic Analysis
+
+Supponiamo che la matrice $A$ sia una matrice di co-occorrenza: sulle colonne sono disposti i documenti $d$, sulle righe i termini $m$. L'elemento $a_{ij}$ indica quante volte il termine $m_i$ appare nel documento $d_j$. Supponendo di introdurre il concetto di *topic* $t$, quindi tematica trattata da un insieme di documenti, il modello *PLSA* asserisce che: 
+$$
+P(m_i, d_j) = \sum_{k=1}^K P(t_k) P(d_j \mid t_k) P(m_i \mid t_k)
+$$
+Ovvero la probabilità di trovare il termine $m_i$ all'interno del documento $d_j$. Tornando alla decomposizione NNMF, possiamo costruire un modello legato alla PLSA, assumendo che:
+$$
+w_{fk} = P(t_k)P(m_f \mid t_k)
+$$
+e anche che
+$$
+h_{kn} = P(d_n \mid t_k)
+$$
+quindi possiamo riscrivere il modello come
+$$
+[\hat{P}(m_f, d_n)] = [\hat{a}_{fn}] = WH 
+$$
+Dove le basi $w_k$ in $W$ rappresentano concetti in grado di spiegare i dati analizzati utilizzando i relativi coefficienti in $h_k$. 
+
+
+
+#### 3.5.3 Funzione obiettivo
+
+Le matrici $W$ e $H$ si ottengono minimizzando una certa funzione obiettivo, quindi: 
+$$
+W, H = \text{arg}\min_{W,H \ge 0} D(A \mid WH)
+$$
+Due possibili funzioni obiettivo sono la *distanza Euclidea*
+$$
+\sum_{f,n} \left( a_{fn} - \hat{a}_{fn} \right)^2
+$$
+O la *divergenza di Kullback-Leibler* (KL)
+$$
+\sum_{fn} \left( 
+a_{fn} \log \frac{a_{fn}}{\hat{a}_{fn}} 
+- a_{fn} + \hat{a}_{fn}
+\right)
+$$
+Dove con $\hat{a}_{fn}$ indichiamo il valore stimato di $a_{fn}$ dal prodotto $WH$. 
+
+
+
+#### 3.5.4 Calcolo della NNMF 
+
+La NNMF di una matrice $A$ può essere calcolata iterando un processo sino a convergenza. Supponiamo di inizializzare le matrici $W$ ed $H$ in maniera casuale. Ricalcoliamo ad ogni iterazione le due matrici come segue: 
+$$
+w_{ia} = w_{ia} \sum_{\mu} \frac{a_{i\mu}}{\hat{a}_{i\mu}} h_{a\mu}
+$$
+Dopodiché normalizziamo il risultato: 
+$$
+w_{ia} = \frac{w_{ia}}{\sum_{j} h_{ja}}
+$$
+Allo stesso modo calcoliamo la matrice $H$
+$$
+h_{a\mu} = h_{a\mu} \sum_{i} w_{ia} \frac{a_{i\mu}}{\hat{a}_{i\mu}} 
+$$
+Dopodiché normalizziamo il risultato:
+$$
+h_{a\mu} = \frac{h_{a\mu}}{\sum_{j} w_{ja}}
+$$
+Le iterazioni convergono ad un *massimo* locale della seguente funzione obiettivo, che risulta essere una derivazione della divergenza di KL (in cui si rimuovono i termini costanti): 
+$$
+X = \sum_i^f  \sum_{\mu}^n \left[ a_{i\mu} \log(\hat{a}_{iu}) -\hat{a}_{iu} \right]
+$$
+
+
+> **Assunzione di linearità**
+> Nelle decomposizioni affrontate si proiettano linearmente i punti da uno spazio ad un altro, preservando la distanza Euclidea. Altri metodi permettono di effettuare delle proiezioni non lineari (i.e. isomap), in cui i punti ricadono in una curva (manifold) a più bassa dimensione. 

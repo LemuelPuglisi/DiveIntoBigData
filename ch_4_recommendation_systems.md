@@ -200,22 +200,21 @@ $$
 J (P,Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
 + \left[ \lambda_1\sum_{x}||p_x||^2 + \lambda_1\sum_{x}||q_x||^2 \right]
 $$
-// fix here 
-
-Dove $\lambda_1, \lambda_2$ sono parametri che permettono di eseguire un tuning sul peso della regolarizzazione, Anche questa volta è possibile utilizzare l'algoritmo di discesa del gradiente, iterando sino a convergenza ed aggiornando le matrici come segue
+Dove $\lambda_1, \lambda_2$ sono parametri che permettono di eseguire un tuning sul peso della regolarizzazione. Anche questa volta è possibile utilizzare l'algoritmo di discesa del gradiente, iterando sino a convergenza ed aggiornando le matrici come segue
 $$
 P \leftarrow P - \eta \nabla P \\
 Q \leftarrow Q - \eta \nabla Q 
 $$
-Dove $\nabla Q$ è la matrice jacobiana della funzione $J$ rispetto a $Q$: 
+Dove $\nabla Q$ indica il gradiente (o più correttamente, la matrice jabobiana) della funzione obiettivo $J$ rispetto a $Q$: 
 $$
-\nabla Q = \left[ \nabla q_{if} \right]  \text{ e }
+\nabla Q = \left[ \nabla q_{if} \right]  \\
 \nabla q_{if} = 
-\sum_{x,i} -2 (r_{xi} - {q_q p_x})p_{xf} + 2\lambda_2q_{if}
+\left[ \sum_{x,i} 2(r_{xi} - {q_q \cdot p_x})(-p_{xf}) \right] + 2\lambda_2q_{if}
 $$
-Analogo per $\nabla P$. 
+Ed analogo il calcolo di $\nabla P$. 
 
 
 
 #### 4.4.6 Stochastic Gradient Descent 
 
+Il calcolo del gradiente è una operazione computazionalmente onerosa. // completare

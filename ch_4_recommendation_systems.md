@@ -44,6 +44,7 @@ $$
 $$
 
 
+
 ### 4.2 Metodi Graph-based
 
 I metodi graph-based sfruttano una idea simile a quella del collaborative filtering, ma utilizzano un grafo bipartito per immagazzinare le informazioni. Le raccomandazioni sono ottenute a partire dalla struttura della rete bipartita. 
@@ -93,4 +94,126 @@ $$
 Il peso $w_{ij}$ della proiezione corrisponde a quante risorse vengono trasferite dall'oggetto $j$ all'oggetto $i$, o quanto piacerà l'oggetto $j$ ad un utente a cui piace l'oggetto $i$. 
 
 > Il NBI funziona su tutti i tipi di oggetti e risolve il problema della sparsità della utility matrix. Tuttavia persistono i problemi con i nuovi utenti o i nuovi item ed il metodo richiede importanti risorse computazionali. 
+
+
+
+### 4.3 Metodi ibridi
+
+I metodi ibridi sfruttano una combinazione di diversi metodi di raccomandazione, risultando essere dei meta-sistemi. Supponiamo di avere due metodi $X$ ed $Y$ che diano rispettivamente gli score $x_a$ e $y_a$. Lo score di un modello ibrido può essere ottenuto come: 
+$$
+z_a  = (1 - \lambda) \frac{x_a}{\max_{\beta}x_{\beta}} 
+	+ \lambda \frac{y_a}{\max_{\beta}y_{\beta}} \text{  con } \lambda \in [0,1]
+$$
+I valori sono normalizzati per lo score massimo che il rispettivo metodo di raccomandazione ha ottenuto. Il modello è generalizzabile per l'utilizzo di $n$ sistemi di raccomandazione. 
+
+
+
+>La valutazione dei risultati di un sistema di raccomandazione consiste spesso nel calcolare il *root mean square error* (RMSE) tra le valutazioni reali dell'utente e le predizioni del sistema. Una alternativa sta nell'interpretare il problema come un task di classificazione binaria, dove con 1 indichiamo una relazione tra utente e item e viceversa con 0. Di conseguenza sarà possibile calcolare metriche come la precision e la recall, o disegnare la curva ROC. 
+
+
+
+### 4.4 BellKor Recommender System
+
+Il BellKor Recommender System è il sistema di raccomandazione che ha vinto il [Netflix Prize](https://en.wikipedia.org/wiki/Netflix_Prize). Combina tre fattori principali: gli effetti globali, la fattorizzazione ed il collaborative filtering. 
+
+#### 4.4.1 Introduzione 
+
+Il collaborative filtering sfutta un criterio globale ed uno locale per effettuare la predizione finale, di fatto la raccomandazione $r_{xi}$ dell'utente $x$ per l'item $i$ è ottenuta dalla seguente espressione: 
+$$
+\hat{r}_{xi} = b_{xi} + \frac 
+{\sum_{j \in N(x;i)} s_{ij} \cdot (r_{xj} - b_{xj}) }
+{\sum_{j \in N(x;i)} s_{ij} }
+$$
+Dove con $b_{xi}$ intendiamo la baseline per l'utente $x$ rispetto all'item $i$ e con $s_{ij}$ intendiamo la similarità tra gli item $i$ e $j$. Tale espressione vale nel caso degli item-item CF; nel caso degli user-user CF è sufficiente trasporre la matrice di utilità. 
+
+Il criterio globale nell'espressione consiste nell'utilizzo della baseline. La baseline è data dalla somma della media globale delle valutazioni $\mu$, la deviazione $b_i$ delle valutazioni sul film $i$ rispetto alla media, la deviazione $b_x$ delle valutazioni dell'utente $x$ rispetto alla media. Quindi $b_{xi} = \mu + b_i + b_x$. Supponiamo che la media delle valutazioni sia $3.7$ stelle. Il film "Sesto senso" è valutato $0.5$ stelle sopra la media; l'utente Joe valuta i film $0.2$ sotto la media. La baseline estimation del rating di Joe per "sesto senso" è $3.7 + 0.5 - 0.2 = 4$ stelle. Tutte le informazioni utilizzate per il calcolo della baseline sono informazioni globali. Attraverso delle informazioni locali ottenute (ad esempio) attraverso il collaborative filtering, è possibile effettuare una predizione più precisa. L'espressione 10 fornisce tutto ciò che serve per il calcolo della predizione finale. 
+
+
+
+#### 4.4.2 Parametri arbitrari 
+
+L'espressione 10 presenta un parametro totalmente arbitrario: la misura di similarità. La similarità influenza in maniera diretta il risultato del sistema, e quindi le dipendenze tra gli utenti (o tra gli item). È possibile sostituire la similarità $s_{ij}$ con dei pesi $w_{ij}$ calcolati attraverso un processo di training. Quindi riscriviamo l'espressione 10
+$$
+\hat{r}_{xi} = b_{xi} + \sum_{j \in N(x;i)} w_{ij} (r_{xj} -  b_{xj})
+$$
+Dove $w_{ij} \in \R$ è un peso di interpolazione che modella l'interazione tra gli oggetti (o gli utenti), indipendente  dall'utente. Assumiamo che: 
+$$
+\sum_{j \in N(x;i)} w_{ij} \ne 1
+$$
+
+
+#### 4.4.3 Primo problema di ottimizzazione 
+
+La matrice di utilità è un dataset contenente dei dati reali, con cui possiamo confrontare i risultati del nostro sistema. Avendo le predizioni $r_{xi}$ e sapendo calcolare la predizione $\hat{r}_{xi}$, i pesi $w_{ij}$ saranno l'incognita da trovare. A questo punto si utilizza un algoritmo di ottimizzazione per minimizzare il SSE (*sum of square errors*) calcolato sui dati di training (n.b. si utilizza il MSE anziché il RMSE poiché la derivata è più semplice). 
+
+La objective function $J$ da ottimizzare sarà la seguente: 
+$$
+J(w) = \sum_{x,i} \left( 
+	\left[ b_{xi} + \sum_{j \in N(x;i)} w_{ij} (r_{xj} -  b_{xj}) \right] 
+	- r_{xi}
+\right)^2 
+$$
+Un algoritmo di ottimizzazione possibile è la discesa del gradiente: sia $\eta$ il *learning rate*, aggiorniamo la nostra matrice di pesi $w$ come segue: 
+$$
+w \leftarrow w - \eta \nabla_w J
+$$
+e ripetiamo sino a convergenza. Anche se nell'espressione è presente il gradiente $\nabla_w J$, in realtà si parla di matrice Jacobiana poiché $w$ presenta 2 dimensioni. Nel nostro caso avremo
+$$
+\nabla_w J = \left[\frac{\partial J(w)}{\partial w_{ij}}\right] = 
+2\sum_{x,i} \left( 
+	\left[ b_{xi} + \sum_{j \in N(x;i)} w_{ij} (r_{xj} -  b_{xj}) \right] 
+	- r_{xi}
+\right) (r_{xj} - b_{xj})
+$$
+$\forall i,x \and j \in N(i;x)$ , quindi $j$ vicino ad $i$, altrimenti avremo: 
+$$
+\frac{\partial J(w)}{\partial w_{ij}} = 0
+$$
+
+
+#### 4.4.4 Fattori latenti 
+
+Sia $R$ la matrice di utilità, effettuiamo la scomposizione SVD e riduciamo la dimensionalità a $k$ fattori latenti, otteniamo: 
+$$
+R \approx U\Sigma V^T 
+$$
+Sia $Q = U$ e $P^T = \Sigma V^T$, allora:
+$$
+R \approx QP^T
+$$
+Per stimare l'elemento $r_{xi}$ della matrice $R$ è sufficiente effettuare il prodotto scalare tra la $i$-esima riga di $Q$ e la $x$-esima colonna di $P^T$ (o analogamente, la $x$-esima riga di $P$)
+$$
+\hat{r}_{xi} = \sum_f q_{if} \cdot p^T_{fx} = \sum_f q_{if} \cdot p_{xf}
+$$
+
+
+#### 4.4.5 Secondo problema di ottimizzazione
+
+La SVD non è definita quando esistono elementi della matrice $R$ non definiti. È possibile trasformare il problema in un problema di ottimizzazione: apprendiamo le matrici $P$ e $Q$ dai dati minimizzando la seguente funzione obiettivo (SSE): 
+$$
+J (P,Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
+$$
+Dove con $q_i$ indichiamo la $i$-esima riga di $Q$ e con $p_x$ la $x$-esima riga di $P$.  Non è richiesto che $P$ e $Q$ siano matrici ortonormali. Le matrici $P$ e $Q$ mappano i vettori di valutazioni in uno spazio latente a dimensioni ridotte.  A partire da $k > 2$ (n. di fattori), il metodo presenta problemi di *overfitting*: si introduce la ***regolarizzazione***.   
+
+L'idea è quella di proiettare lontani dall'origine gli utenti con molte valutazioni, ottenendo una predizione più affidabile, e mantenere vicini all'origine gli utenti con con poche valutazioni. Lo facciamo introducendo un fattore di regolarizzazione nella funzione obiettivo: 
+$$
+J (P,Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
++ \left[ \lambda_1\sum_{x}||p_x||^2 + \lambda_1\sum_{x}||q_x||^2 \right]
+$$
+Dove $\lambda_1, \lambda_2$ sono parametri che permettono di eseguire un tuning sul peso della regolarizzazione, Anche questa volta è possibile utilizzare l'algoritmo di discesa del gradiente, iterando sino a convergenza ed aggiornando le matrici come segue
+$$
+P \leftarrow P - \eta \nabla P \\
+Q \leftarrow Q - \eta \nabla Q 
+$$
+Dove $\nabla Q$ è la matrice jacobiana della funzione $J$ rispetto a $Q$: 
+$$
+\nabla Q = \left[ \nabla q_{if} \right]  \text{ e }
+\nabla q_{if} = 
+\sum_{x,i} -2 (r_{xi} - {q_q p_x})p_{xf} + 2\lambda_2q_{if}
+$$
+Analogo per $\nabla P$. 
+
+
+
+#### 4.4.6 Stochastic Gradient Descent 
 

@@ -189,17 +189,19 @@ $$
 
 #### 4.4.5 Secondo problema di ottimizzazione
 
-La SVD non è definita quando esistono elementi della matrice $R$ non definiti. È possibile trasformare il problema in un problema di ottimizzazione: apprendiamo le matrici $P$ e $Q$ dai dati minimizzando la seguente funzione obiettivo (SSE): 
+La SVD non è applicabile quando nella matrice $R$ vi sono elementi non definiti. Tuttavia è possibile ovviare al problema ricavando le matrici $Q$ e $P$ attraverso i metodi di ottimizzazione. Consideriamo la seguente funzione obiettivo (*sum of squared errors, SSE*):
 $$
-J (P,Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
+J (P, Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
 $$
-Dove con $q_i$ indichiamo la $i$-esima riga di $Q$ e con $p_x$ la $x$-esima riga di $P$.  Non è richiesto che $P$ e $Q$ siano matrici ortonormali. Le matrici $P$ e $Q$ mappano i vettori di valutazioni in uno spazio latente a dimensioni ridotte.  A partire da $k > 2$ (n. di fattori), il metodo presenta problemi di *overfitting*: si introduce la ***regolarizzazione***.   
+Con $q_i$ indichiamo la $i$-esima riga della matrice $Q$, con $p_x$ indichiamo la $x$-esima riga della matrice $P$. Il metodo non richiede che le due matrici siano ortonormali. Sia $k$ il numero di fattori latenti, si osserva empiricamente che l'ottimizzazione soffre di problemi di *overfitting* già per $k > 2$. 
 
-L'idea è quella di proiettare lontani dall'origine gli utenti con molte valutazioni, ottenendo una predizione più affidabile, e mantenere vicini all'origine gli utenti con con poche valutazioni. Lo facciamo introducendo un fattore di regolarizzazione nella funzione obiettivo: 
+Introduciamo la regolarizzazione nella funzione obiettivo basandoci sull'idea che una maggiore quantità di valutazioni permette una predizione più accurata per un determinato utente. Geometricamente, si interpreta posizionando l'utente (vettore di valutazioni) lontano dal centro (quindi predizione più sicura) se il numero di valutazioni effettuate è alto. Nella pratica aggiungiamo il termine tra parentesi quadre: 
 $$
 J (P,Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
 + \left[ \lambda_1\sum_{x}||p_x||^2 + \lambda_1\sum_{x}||q_x||^2 \right]
 $$
+// fix here 
+
 Dove $\lambda_1, \lambda_2$ sono parametri che permettono di eseguire un tuning sul peso della regolarizzazione, Anche questa volta è possibile utilizzare l'algoritmo di discesa del gradiente, iterando sino a convergenza ed aggiornando le matrici come segue
 $$
 P \leftarrow P - \eta \nabla P \\

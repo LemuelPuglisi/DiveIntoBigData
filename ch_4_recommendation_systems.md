@@ -142,9 +142,10 @@ $$
 $$
 
 
+
 #### 4.4.3 Primo problema di ottimizzazione 
 
-La matrice di utilità è un dataset contenente dei dati reali, con cui possiamo confrontare i risultati del nostro sistema. Avendo le predizioni $r_{xi}$ e sapendo calcolare la predizione $\hat{r}_{xi}$, i pesi $w_{ij}$ saranno l'incognita da trovare. A questo punto si utilizza un algoritmo di ottimizzazione per minimizzare il SSE (*sum of square errors*) calcolato sui dati di training (n.b. si utilizza il MSE anziché il RMSE poiché la derivata è più semplice). 
+La matrice di utilità è un dataset contenente dei dati reali, con cui possiamo confrontare i risultati del nostro sistema. Avendo le predizioni $r_{xi}$ e sapendo calcolare la predizione $\hat{r}_{xi}$, i pesi $w_{ij}$ saranno l'incognita da trovare. A questo punto si utilizza un algoritmo di ottimizzazione per minimizzare il SSE (*sum of square errors*) calcolato sui dati di training (n.b. si utilizza il SSE anziché il RMSE poiché la derivata è più semplice). 
 
 La objective function $J$ da ottimizzare sarà la seguente: 
 $$
@@ -187,6 +188,7 @@ $$
 $$
 
 
+
 #### 4.4.5 Secondo problema di ottimizzazione
 
 La SVD non è applicabile quando nella matrice $R$ vi sono elementi non definiti. Tuttavia è possibile ovviare al problema ricavando le matrici $Q$ e $P$ attraverso i metodi di ottimizzazione. Consideriamo la seguente funzione obiettivo (*sum of squared errors, SSE*):
@@ -198,7 +200,7 @@ Con $q_i$ indichiamo la $i$-esima riga della matrice $Q$, con $p_x$ indichiamo l
 Introduciamo la regolarizzazione nella funzione obiettivo basandoci sull'idea che una maggiore quantità di valutazioni permette una predizione più accurata per un determinato utente. Geometricamente, si interpreta posizionando l'utente (vettore di valutazioni) lontano dal centro (quindi predizione più sicura) se il numero di valutazioni effettuate è alto. Nella pratica aggiungiamo il termine tra parentesi quadre: 
 $$
 J (P,Q) = \sum_{(i,x) \in R} \left( r_{xi} - q_{i} \cdot p_{x} \right)^2
-+ \left[ \lambda_1\sum_{x}||p_x||^2 + \lambda_1\sum_{x}||q_x||^2 \right]
++ \left[ \lambda_1\sum_{x}||p_x||^2 + \lambda_2\sum_{x}||q_i||^2 \right]
 $$
 Dove $\lambda_1, \lambda_2$ sono parametri che permettono di eseguire un tuning sul peso della regolarizzazione. Anche questa volta è possibile utilizzare l'algoritmo di discesa del gradiente, iterando sino a convergenza ed aggiornando le matrici come segue
 $$
@@ -217,4 +219,71 @@ Ed analogo il calcolo di $\nabla P$.
 
 #### 4.4.6 Stochastic Gradient Descent 
 
-Il calcolo del gradiente è una operazione computazionalmente onerosa. // completare
+Il calcolo del gradiente nell'algoritmo di discesa del gradiente è particolarmente oneroso, supponiamo di stare effettuando l'ottimizzazione per un regressore lineare $h_{\theta}$: 
+$$
+h_{\theta}(x^{(i)}) = \sum_{j=1}^n \theta_j x^{(i)}_j
+$$
+Supponiamo che la funzione obiettivo $J(\theta)$ sia definita come segue
+$$
+J(\theta) = \frac{1}{2m} \sum_{i=1}^m \left( h_{\theta}(x^{(i)}) - y^{(i)} \right)^2
+$$
+Quindi lo step di aggiornamento dell'algoritmo di discesa del gradiente sarà: 
+$$
+\theta_j = \theta_j - \eta \frac{1}{m} \sum_{i=1}^m \left( h_{\theta}(x^{(i)}) - y^{(i)} \right) x^{(i)}_j \text{ per } j = 1 \dots n
+$$
+Ovvero per ogni coefficiente $\theta_j$ si calcola la derivata parziale della funzione obiettivo $J$ sull'intero training set. Se la dimensione del training set $m$ è particolarmente grande, i dati saranno molto probabilmente conservati in memoria secondaria. L'algoritmo risulta quindi molto pesante. Supponiamo di definire una funzione costo: 
+$$
+\text{cost}(\theta, (x^{(i)}, y^{(i)})) = \frac{1}{2} \left( 
+h_{\theta}(x^{(i)}) - y^{(i)}
+\right)^2
+$$
+Quindi riscriviamo la funzione costo come
+$$
+J(\theta) = \frac{1}{m} \sum_{i=1}^m \text{cost}(\theta, (x^{(i)}, y^{(i)}))
+$$
+L'algoritmo di discesa del gradiente *stocastico* (*Stochastic Gradient Descent*, SGD) consiste in due step ripetuti in maniera iterativa: 
+
+* Permutare casualmente il training set 
+* Aggiornare i coefficienti come segue
+
+$$
+\text{per } i = 1, \dots, m \text{ eseguire: } \\
+\theta_j = \theta_j - \alpha \frac{1}{m} \left( h_{\theta}(x^{(i)}) - y^{(i)} \right) x^{(i)}_j \text{ per } j = 1 \dots n
+$$
+
+Osserviamo che all'interno dello step di aggiornamento vi è la derivata parziale della funzione costo anziché della funzione obiettivo: questo implica che, ad ogni step, i pesi vengono aggiornati basandosi su una singola osservazione del training set e non su tutti i dati. 
+
+Lo stochastic gradient descent è molto più rapido dell'algoritmo di discesa del gradiente classico. Tuttavia, la convergenza ad un minimo locale della funzione obiettivo risulta essere più instabile e necessita di più step.
+
+
+
+#### 4.4.7 Costruzione del modello
+
+È possibile combinare il predittore baseline con le interazioni utente-film ottenute attraverso la scomposizione in fattori latenti: 
+$$
+\hat{r}_{xi} = \mu + b_x + b_i + q_i \cdot p_x
+$$
+Quindi minimizzare la funzione obettivo così proposta
+$$
+J(Q,P, b_x, b_i) = 
+\sum_{(i,x) \in R} \left( r_{xi} - (\mu + b_x + b_i + q_i \cdot p_x) \right)^2 + \\
++ \left[ 
+\lambda_1\sum_{x}||p_x||^2 + 
+\lambda_2\sum_{x}||q_i||^2 +
+\lambda_3\sum_{x}||b_x||^2 +
+\lambda_4\sum_{x}||b_i||^2 +
+\right]
+$$
+In questo caso sia le interazioni $q_i$ e $p_x$ che i bias $b_x$ e $b_i$ sono trattati come parametri da stimare e vengono aggiunti termini di regolarizzazione anche per i bias. 
+
+
+
+#### 4.4.8 Bias temporali
+
+Una ulteriore miglioria al modello consiste nel legare i bias $b_i$ e $b_x$ ed i fattori $p_x$ e $q_i$ al tempo, sotto la considerazione che la valutazione di un film tende ad essere stabile per i film vecchi ed instabile per i film nuovi. 
+$$
+\hat{r}_{xi} = \mu + b_x(t) + b_i(t) + q_i(t) \cdot p_x(t)
+$$
+
+
+> La soluzione del team "BellKor's Pragmatic Chaos" vincitore del Netflix prize consiste nell'eseguire un blend lineare dei risultati di diversi tipi di predittori (approssimativamente 500) che sfruttano i concetti mostrati, ottenendo un miglioramento del 10.09%.

@@ -193,14 +193,89 @@ Il che dimostra la nostra tesi.
 
 ##### Teorema 2
 
-Si può dimostrare che la similarità tra insiemi di shingle è uguale al valore atteso della similarità tra le corrispondenti signature. 
-
 Per semplicità, abbreviamo: 
 $$
 sim^*(S_i, S_j) \equiv sim^*(h(S_i), h(S_j))
 $$
-Definiamo una **soglia di similarità** $s$ al di sopra del quale consideriamo due insiemi *altamente simili*. Supponiamo che $s$ sia limitato inferiormente da una costante $c$. 
+Sia $s$ una soglia di similarità al di sopra della quale consideriamo due insiemi di shingle "altamente simili". Supponiamo che $s$ sia limitato inferiormente da una costante $c$. Allora vale il seguente teorema: 
 
-> Lezione da riprende a 1:22:42
+Siano $0 < \delta < 1$, $\epsilon > 0$, e $k > 2 \delta^{-2}c^{-1}\log{\epsilon^{-1}}$, allora per ogni coppia di insiemi $S_i, S_j$ valgono le seguenti proprietà:
+$$
+\text{a) }  sim(S_i, S_j) \ge s \ge c \Longrightarrow P(sim^*(S_i, S_j) \ge (1-\delta)s) \ge 1 - \epsilon \\
+\text{b) }  sim(S_i, S_j) \le c \Longrightarrow P(sim^*(S_i, S_j) \le (1-\delta)c) \ge 1 - \epsilon \\
+$$
+Dove $\epsilon$ e $\delta$ sono parametri arbitrari; il teorema ci permette di limitare il numero di falsi positivi e falsi negativi (controllare l'errore). Dimostriamo la proprietà a) 
+$$
+\text{a) }  sim(S_i, S_j) \ge s \ge c \Longrightarrow P(sim^*(S_i, S_j) \ge (1-\delta)s) \ge 1 - \epsilon
+$$
+Scriviamo: 
+$$
+P(sim^*(S_i, S_j) < (1-\delta)s) < \epsilon
+$$
+Banalmente, poiché se l'evento $A$ accade con probabilità $p$, allora l'*evento complementare o contrario* $A^C$ accade con probabilità $1-p$. 
 
-> Più è alto il numero di minhash, più ci avviciniamo al valore atteso (teo. del limite centrale)
+Grazie al teorema precedente, possiamo asserire: 
+$$
+P\left(h_{\pi}(S_i) = h_{\pi}(S_j)\right) = \frac{|S_i \cap S_j |}{|S_i \cup S_j |}
+$$
+Usiamo $k$ funzioni hash, quindi $k$ permutazioni e definiamo una variabile aleatoria $X$ come segue: 
+$$
+X = X_1 + X_2 + \dots + X_k
+$$
+Con
+$$
+X_l = \begin{cases}
+1 \text{ se } h_{l}(S_i) = h_{l}(S_j) \\
+0 \text{ altrimenti}
+\end{cases} \text{ per } l = 1, \dots, k
+$$
+Osserviamo che
+$$
+P(X_l = 1) = \frac{|S_i \cap S_j |}{|S_i \cup S_j |} = p
+$$
+La variabile aleatoria $X$ è distribuita secondo una distribuzione binomiale, $X \sim Bi(k, p)$. Il valore atteso è noto e corrisponde a: 
+$$
+E[X] = kp = k \cdot \frac{|S_i \cap S_j |}{|S_i \cup S_j |} = k \cdot sim(S_i, S_j)
+$$
+Poiché la similarità originale $sim$ corrisponde proprio alla similarità di Jaccard. 
+
+Sappiamo che la similarità tra signatures $sim^*$ corrisponde al numero di volte in cui i minhash corrispondono (casi favorevoli) rispetto al numero di minhash totali, quindi scriviamo: 
+$$
+sim^*(S_i, S_j) = \frac{X}{k}
+$$
+Anche questa è una variabile aleatoria, il cui valore atteso corrisponde a: 
+$$
+E\left[\frac{X}{k}\right] = \frac 1 k E[X] = \frac 1 k \cdot k \cdot sim(S_i, S_j) = sim(S_i, S_j) 
+$$
+Quindi la similarità tra signatures è un estimatore corretto della similarità di Jaccard tra gli insiemi. Questo vuol dire che al crescere del numero di funzioni hash applicate, per la legge dei grandi numeri, l'estimatore converge al parametro stimato. Utilizziamo adesso un importante teorema, chiamato **Chernoff Bound**, che enuncia: 
+$$
+P(X < (1 - \delta) E[X]) < \exp(-\frac{\delta^2E[X]}{2})
+$$
+Riscriviamo l'espressione dettata dal Chernoff Bound sostituendo i protagonisti e ricordandoci di aver considerato il complementare nell'espressione (17):
+$$
+P(sim^*(S_i, S_j) < (1 - \delta)s )
+= P\left(\frac{X}{k} < (1-\delta)s\right) 
+= P\left(X < (1-\delta)sk\right)
+$$
+Per ipotesi, sappiamo che: 
+$$
+sim(S_i, S_j) \ge s
+$$
+Quindi possiamo sostituire nella disequazione (26) $s$ con la similarità di Jaccard: 
+$$
+P(X < (1 - \delta) \cdot k \cdot sim(S_i, S_j))
+$$
+Essendoci ricondotti al valore atteso di $X$ (vedasi espressione 22), è possibile applicare il Chernoff Bound: 
+$$
+P(X < (1 - \delta) \cdot k \cdot sim(S_i, S_j)) < \exp(-\frac{\delta^2E[X]}{2}) = \\ 
+= \exp(-\frac{\delta^2 k \cdot sim(S_i, S_j)}{2}) \le \\
+\le \exp(-\frac{\delta^2 k \cdot s}{2}) < \epsilon
+$$
+Fissati $\epsilon$ e $\delta$, ricaviamo la quantità $k$ (funzioni hash necessarie ad ottenere un certo controllo dell'errore) risolvendo la disequazione: 
+$$
+\exp(-\frac{\delta^2 k \cdot s}{2}) < \epsilon		\Longrightarrow 
+-\frac{\delta^2 k \cdot s}{2} < \log \epsilon		\Longrightarrow 
+\frac{\delta^2 k \cdot s}{2} > \log \epsilon^{-1}	\Longrightarrow
+k > 2\delta^{-2}s^{-1}\log \epsilon^{-1}
+$$
+Quindi la proprietà è dimostrata. 

@@ -279,3 +279,182 @@ $$
 k > 2\delta^{-2}s^{-1}\log \epsilon^{-1}
 $$
 Quindi la proprietà è dimostrata. 
+
+
+
+#### 5.3.4 Row hashing 
+
+Effettuare una permutazione è una operazione molto dispendiosa. Una ingegnerizzazione del min-hashing, chiamata row-hashing, permette di effettuare lo stesso procedimento rapidamente. Supponiamo di avere $d$ documenti $S_1, \dots, S_d$ e $k$ funzioni hash $h_1, \dots, h_k$ del tipo: 
+$$
+h(x) = [(ax + b) \mod p] \mod N
+$$
+Dove $a$ e $b$ sono due interi arbitrari, $p$ è un numero primo, $N$ è il numero di shingle e si ha che $p > N$.  Sappiamo a priori che la matrice delle signatures avrà dimensione $k \times d$. La procedure consiste nei seguenti passi: 
+
+* Inizializzare la matrice delle signatures $S$ ad $\infty$.
+* Per ogni riga (termine) $i = 0, \dots, N$ 
+  * Per ogni funzione hash $j = 0, \dots, k$ 
+    * Generare l'indice $h_j(i)$ della riga $i$ nella permutazione data da $h_j$ 
+    * Per ogni documento $l = 0, \dots, d$ controllare se all'indice $h_j(i)$ vi è un 1. 
+      * Se è così, allora se l'elemento $S_{jl}$ è maggiore di $h_j(i)$ 
+        * $S_{jl} \leftarrow h_j(i)$
+
+Vediamo un esempio: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c c c c}
+	0 \\
+	1 \\
+	2 \\
+	3 \\
+	4 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	1 & 0 & 0 & 1 \\
+	0 & 0 & 1 & 0 \\
+	0 & 1 & 0 & 1 \\
+	1 & 0 & 1 & 1 \\
+	0 & 0 & 1 & 0 \\
+	\end{array}
+\right]
+\end{array}
+$$
+Supponiamo di avere $k=2$ funzioni hash definite come segue: 
+$$
+h_1(x) = (x+1) \mod{5} \\
+h_2(x) = (3x+1) \mod{5}
+$$
+Che generano le due permutazioni: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c} h1 & h_2\
+	\end{array} \\
+	\begin{array}{c c c c c}
+	0 \\
+	1 \\
+	2 \\
+	3 \\
+	4 \\
+	\end{array}
+& \left[
+	\begin{array}{c c}
+	1 & 1 \\
+	2 & 4 \\
+	3 & 2 \\
+	4 & 0 \\
+	0 & 3 \\
+	\end{array}
+\right]
+\end{array}
+$$
+Inizializziamo la matrice delle signatures: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c}
+	h_1 \\
+	h_2 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	\infty & \infty & \infty & \infty \\
+	\infty & \infty & \infty & \infty \\
+
+	\end{array}
+\right]
+\end{array}
+$$
+La riga $i=0$ della characteristic matrix ha indici $(1,1)$ nelle permutazioni generate dalle funzioni hash. I documenti $S_1$ ed $S_4$ hanno valore 1 nella prima riga, quindi possiamo aggiornare la matrice delle signatures come segue: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c}
+	h_1 \\
+	h_2 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	1 & \infty & \infty & 1 \\
+	1 & \infty & \infty & 1 \\
+
+	\end{array}
+\right]
+\end{array}
+$$
+La riga $i=1$ della characteristic matrix ha indici $(2,4)$ e solo il documento $S_3$ ha valore 1, aggiorniamo: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c}
+	h_1 \\
+	h_2 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	1 & \infty & 2 & 1 \\
+	1 & \infty & 4 & 1 \\
+
+	\end{array}
+\right]
+\end{array}
+$$
+La riga $i=2$ della characteristic matrix ha indici $(3,2)$; i documenti $S_2$ ed $S_4$ hanno valore 1, aggiorniamo i valori minori di quelli esistenti nella matrice delle signatures (ad esempio $S_4$ rimane lo stesso poiché $1 < 3$ e $1 < 2$): 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c}
+	h_1 \\
+	h_2 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	1 & 3 & 2 & 1 \\
+	1 & 2 & 4 & 1 \\
+
+	\end{array}
+\right]
+\end{array}
+$$
+Allo stesso modo, per $i=3$: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c}
+	h_1 \\
+	h_2 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	1 & 3 & 2 & 1 \\
+	0 & 2 & 0 & 0 \\
+
+	\end{array}
+\right]
+\end{array}
+$$
+E per $i=4$: 
+$$
+\begin{array}{c c} &
+	\begin{array}{c c c c} S_1 & S_2 & S_3 & S_4 \\
+	\end{array} \\
+	\begin{array}{c c}
+	h_1 \\
+	h_2 \\
+	\end{array}
+& \left[
+	\begin{array}{c c c c}
+	1 & 3 & 0 & 1 \\
+	0 & 2 & 0 & 0 \\
+
+	\end{array}
+\right]
+\end{array}
+$$
+Abbiamo costruito la matrice delle signatures senza generare effettivamente le permutazioni delle righe di ogni colonna. Questa ingegnerizzazione rende il minhashing molto più rapido. 

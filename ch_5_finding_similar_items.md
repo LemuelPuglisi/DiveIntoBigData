@@ -458,3 +458,97 @@ $$
 \end{array}
 $$
 Abbiamo costruito la matrice delle signatures senza generare effettivamente le permutazioni delle righe di ogni colonna. Questa ingegnerizzazione rende il minhashing molto più rapido. 
+
+
+
+### 5.4 Locality Sensitive Hashing 
+
+Calcolare la similarità tra ogni coppia di documenti presenti nel database è un task dispendioso e l'approccio naive ha un tempo $O(n^2)$. Il Locality Sensitive Hashing permette di svolgere il task in tempo lineare $O(n)$ controllando l'errore di approssimazione. 
+
+L'idea di base consiste nel generare uno ***sketch*** per ogni oggetto (nel nostro caso un documento) tale che: 
+
+* Sia molto più piccolo rispetto al suo numero originale di feature
+* Trasformi la similarità tra due vettori di feature in una operazione di uguaglianza tra sketch 
+
+Tale metodologia è randomizzata e corretta con alta probabilità, quindi ammettiamo un certo numero (ragolabile) di falsi positivi e falsi negativi, ed inoltre è ottima in approcci distribuiti. 
+
+
+
+#### 5.4.1 LSH e Distanza di Hamming 
+
+Per spiegare semplicemente il procedimento e le proprietà del LSH, prendiamo in considerazione la distanza di Hamming. Supponiamo di avere due vettori binari $p$ e $q$ con $d$ feature. La distanza di hamming è definita come
+$$
+D(p,q) = \text{#bits where p and q differ}
+$$
+Definiamo una funzione hash $h$ che prenda un insieme $I$ random di $k$ feature
+$$
+h(p) = \text{projection of vector p on I's coordinates}
+$$
+Ad esempio se $k=2$, assumendo che $I=\{1,4\}$ allora la proiezione $h(01011) = 01$.  Definiamo la similarità di Hamming come segue il rapporto tra le feature che combaciano nei due vettori binari e le feature totali: 
+$$
+Sim(p,q) = \frac{d - D(p,q)}{d} = 1 - \frac{D(p,q)}{d}
+$$
+Scegliendo casualmente una posizione $x$ nei nostri vettori binari, la probabilità che il valore di $p$ e $q$ combaci nella posizione $x$ è data proprio dalla similarità: 
+$$
+P(p_x = q_x) = sim(p,q) = 1 - \frac{D(p,q)}{d}
+$$
+Dato che la funzione hash genera un insieme $I$ di $k$ posizioni random e indipendenti tra loro, la probabilità $s^k$ che $p$ e $q$ combacino in tutte e $k$ le posizioni corrisponde a: 
+$$
+s^k = P(h(p) = h(q)) = \left(1 - \frac{D(p,q)}{d}\right)^k
+$$
+Aumentando $k$
+
+* Aumentano il numero di posizioni nell'insieme $I$
+* Aumenta la probabilità di trovare posizioni che differiscono nei due vettori binari
+* Diminuisce la probabilità che i vettori binari combacino
+* Diminuisce il numero di falsi positivi
+
+![image-20210505104541428](ch_5_finding_similar_items.assets/image-20210505104541428.png)
+
+#### 5.4.2 Gestire i falsi negativi
+
+Per ridurre i falsi negativi, l'idea implementata nel LSH sta nel ripetere $L$ volte le $k$-proiezioni dei vettori e, ad ogni ripetizione, generare insiemi casuali differenti. 
+
+Abbiamo $L$ funzioni hash $<h_1, h_2, \dots, h_L>$ e definiamo la proiezione del vettore binario $p$ come 
+$$
+g(p) = <h_1(p), h_2(p), \dots, h_L(p)>
+$$
+Dichiariamo che $p$ è simile a $q$, e scriviamo $g(p) \cong g(q)$ se **almeno una** proiezione combacia, ovvero se
+$$
+g(p) \cong g(q) \Longleftrightarrow\exist i \in \{1,\dots, L\} : h_i(p) = h_i(q)
+$$
+Più grande è $L$, ***minori saranno i falsi negativi***. 
+
+La probabilità che $p$ e $q$ non siano simili è data dalla probabilità che tutte le proiezioni non combacino
+$$
+P(g(p) \not\cong g(q)) = P \bigg( 
+	h_i(p) \ne h_i(q) \text{ for } i = 1, \dots, L 
+\bigg)
+$$
+Dato che le proiezioni sono indipendenti tra loro, è possibile scomporre la congiunzione degli eventi nel prodotto delle loro probabilità e, dato che la probabilità che esse non coincidano è la stessa qualunque sia la proiezione, possiamo scrivere:
+$$
+P(g(p) \not\cong g(q))  = P \big( h(p) \ne h(q) \big)^L = (1 - P(h(p) = h(q)))^L = (1 - s^k)^L
+$$
+Infine scriviamo che $p$ è simile a $q$ con probabilità 
+$$
+P( g(p) \cong g(q) ) = 1 - (1 - s^k)^L
+$$
+Se sull'asse delle $x$ indichiamo la similarità, la funzione $f(x) =1 - (1 - x^k)^L$ ha il seguente andamento (per $k=5$  ed $L=10$): 
+
+![image-20210505134445976](ch_5_finding_similar_items.assets/image-20210505134445976.png)
+
+
+
+##### Esempio
+
+ Supponiamo che $k=2$ ed $L=3$ e siano i due vettori
+$$
+p = 01001 \\
+q = 01101
+$$
+Quindi procediamo a generare gli insiemi $I$ casuali: 
+
+* per $I_1 = \{3,4\}$ abbiamo $h_1(p) =00$ e $h_2(q) = 10$, nessun match quindi proseguiamo;
+* per $I_2 = \{1,3\}$ abbiamo $h_1(p) = 00$ e $h_2(q)=01$, nessun match quindi proseguiamo; 
+* per $I_3 = \{1,5\}$ abbiamo $h_1(p) = 01$ e $h_2(q)=01$, match! I vettori $p$ e $q$ sono simili. 
+

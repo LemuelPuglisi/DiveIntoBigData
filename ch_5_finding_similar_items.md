@@ -705,3 +705,83 @@ p_2 = \{1 - \{ 1 - [ 1 - (1 - 0.2^k)^L ] \}^L \}^k = \{1 - \{ 1 - [ 1 - (1 - 0.2
 \approx 0
 $$
 Plottando queste funzioni, avremo una curva molto più ripida che approssima meglio la step function ideale. Una soluzione del genere riduce molto bene sia il numero di falsi positivi che il numero di falsi negativi. 
+
+
+
+#### 5.4.2 LSH su diverse distanze 
+
+##### Min hashing 
+
+La famiglia delle funzioni min-hash, assumendo che esse usino la distanza di Jaccard, sono 
+$$
+(d_1, d_2, 1-d_1, 1-d_2)\text{-sensitive}
+$$
+Per ogni $d_1$ e $d_2$ tale che $0 < d_1 < d_2 < 1$. Per le altre distanze non vi è alcuna garanzia che vi siano funzioni hash locality sensitive. Vedremo alcune delle più famose di seguito. 
+
+
+
+##### Distanza di Hamming
+
+Siano $x$ e $y$ due vettori binari di dimensione $d$, denotiamo con $h(x,y)$ la loro distanza di Hamming. Definiamo una funzione $f_i(x)$ che rappresenti l'$i$-esimo elemento del vettore $x$. Possiamo affermare che $f_i(x) = f_i(y)$ se e solo se $x$ e $y$ combaciano nell'elemento $i$-esimo. La probabilità che combacino è 
+$$
+P( f_i(x) = f_i(y) ) = 1-\frac{h(x,y)}{d}
+$$
+Possiamo definire la famiglia $F$ di funzioni locality sensitive come una famiglia
+$$
+\left( d_1, d_2, 1 - \frac{d_1}{d}, 1 - \frac{d_2}{d} \right)\text{-sensitive}
+$$
+Con $d_1 < d_2$. 
+
+
+
+##### Distanza del coseno
+
+La distanza del coseno ha senso in spazi aventi delle dimensioni (come gli spazi Euclidei o le versioni discrete degli spazi Euclidei). In tali spazi i punti hanno delle direzioni. La distanza del coseno tra due punti corrisponde all'angolo tra questi; tale angolo sarà definito tra 0° e 180° a prescindere da quante dimensioni sia costituito lo spazio. Possiamo calcolare la distanza del coseno calcolando prima il coseno dal rapporto tra il prodotto scalare tra i due vettori ed il prodotto tra le loro norme,  poi applicando l'arcocoseno: 
+$$
+d(x,y) = \arccos \left( \frac{x \cdot y}{||x|| \cdot ||y||} \right) \in [0, \pi]
+$$
+È possibile dimostrare che la distanza del coseno è una misura di distanza. Se volessimo normalizzare il valore della distanza tra 0 ed 1, basterebbe dividere per $\pi$
+$$
+d(x,y) = \frac {\theta}{\pi} =  
+\frac {\arccos \left( \frac{x \cdot y}{||x|| \cdot ||y||} \right)}{\pi}
+\in [0,1]
+$$
+Supponiamo di considerare due vettori $x$ ed $y$. Tali vettori potrebbero trovarsi in uno spazio con molte dimensioni, Tuttavia insieme definiscono un piano e l'angolo tra loro e misurato sul tale piano:
+
+![image-20210507171203923](ch_5_finding_similar_items.assets/image-20210507171203923.png)
+
+Selezionando in maniera casuale un iperpiano che passa dall'origine (asse *tratteggiato* in figura), esso intersecherà il piano formato da $x$ e $y$. Per selezionare un iperpiano in maniera casuale, selezioniamo casualmente un vettore $v$ (asse *punteggiato* in figura), che sarà il suo vettore normale, dopodiché tutti i punti ortogonali a $v$ saranno punti appartenenti all'iperpiano. 
+
+Se effettuiamo il prodotto scalare tra $v$ ed i due vettori in figura, avremo prodotti con segni differenti: questo poiché  essi capitano in lati opposti dell'iperpiano. Se l'iperpiano fosse stato l'asse punteggiato ed il suo vettore normale l'asse tratteggiato, allora i prodotti scalari avrebbero avuto lo stesso segno poiché dalla stessa parte dell'iperpiano. 
+
+In sintesi, preso $v$ un vettore random, definiamo la funzione hash
+$$
+h_v(x) = \begin{cases}
++1 \text{ se } v \cdot x \ge 0 \\
+-1 \text{ se } v \cdot x < 0 
+\end{cases}
+$$
+Se il segno è positivo, i due vettori formeranno un angolo minore di $180°$, viceversa se il segno è negativo. La famiglia $F$ di funzioni locality sensitive per la distanza del coseno è formata da funzioni $f \in F$ tale che:
+$$
+f(x) = f(y) \Longleftrightarrow \text{sign}(f(x)) = \text{sign}(f(y))
+$$
+Si dimostra che la famiglia di funzioni appena definità è una famiglia
+$$
+\left(d_1, d_2, \frac{(180° - d_1)}{180°}, \frac{(180 - d_2)}{\pi} \right)\text{-sensitive}
+$$
+
+> Al paragrafo 3.7.3 di Mining of massive datasets vi è un semplice trucco per la generazione degli sketch per vettori a cui deve essere applicata la distanza del coseno. Tale trucco consiste nel generare vettori casuali $v$ le cui componenti sono esclusivamente formate da +1 e -1, così che il prodotto scalare diventi la somma degli elementi a cui corrisponde un +1, a cui viene sottratta la somma degli elementi a cui corrisponde un -1.
+>
+> Inoltre vi è un esempio che spiega come viene stimata la distanza del coseno. Supponiamo che gli sketch tra due vettori siano $[+1,+1,-1]$ e $[-1,+1,-1]$, essendo che solo $\frac 1 3$ degl elementi combaciano, si stima come distanza un angolo di 120°.  
+
+
+
+##### Distanza Euclidea
+
+Siano $x$ ed $y$ due vettori, la distanza Euclidea è definita come
+$$
+d(x,y) = \sqrt{ \sum_i(x_i - y_i)^2 }
+$$
+
+
+> 57:29

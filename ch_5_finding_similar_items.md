@@ -533,7 +533,7 @@ Infine scriviamo che $p$ è simile a $q$ con probabilità
 $$
 P( g(p) \cong g(q) ) = 1 - (1 - s^k)^L
 $$
-Se sull'asse delle $x$ indichiamo la similarità, la funzione $f(x) =1 - (1 - x^k)^L$ ha il seguente andamento (per $k=5$  ed $L=10$): 
+Se sull'asse delle $x$ indichiamo la similarità, la funzione $f(x) =1 - (1 - x^k)^L$ ha il seguente andamento ad $S$ (per $k=5$  ed $L=10$): 
 
 ![image-20210505134445976](ch_5_finding_similar_items.assets/image-20210505134445976.png)
 
@@ -552,3 +552,156 @@ Quindi procediamo a generare gli insiemi $I$ casuali:
 * per $I_2 = \{1,3\}$ abbiamo $h_1(p) = 00$ e $h_2(q)=01$, nessun match quindi proseguiamo; 
 * per $I_3 = \{1,5\}$ abbiamo $h_1(p) = 01$ e $h_2(q)=01$, match! I vettori $p$ e $q$ sono simili. 
 
+
+
+#### 5.4.3 LSH e min-hashing 
+
+Sia $M$ la matrice delle signatures di dimensione $m \times n$ (*m* funzioni hash ed $n$ documenti) . Dividiamo le $m$ righe in $L$ bande (o gruppi contingui) ognuna formata da $k$ righe. Sia $t$ la soglia di similarità, allora utilizzando il LSH avremo la seguente situazione: 
+
+![image-20210507085305972](ch_5_finding_similar_items.assets/image-20210507085305972.png)
+
+Se la linea rossa coincide con la soglia di similarità, l'area verde che la precede è la probabilità di incappare in un *falso positivo*, mentre l'area rossa che la succede è la probabilità di incappare in un *falso negativo*. Idealmente, vorremmo una funzione step che rifiuti tutto prima della soglia $t$, dopodiché accetti tutto. 
+
+
+
+##### Esempio
+
+Supponiamo che la soglia sia $t = 0.8$ e che la similarità tra due insiemi di shingle $S_1$ ed $S_2$ sia 
+$$
+sim(S_1, S_2) = 0.8 \ge t
+$$
+Consideriamo $k=5$ e $L=20$, quindi dividiamo la nostra matrice in 20 bande da 5 righe ciascuna. Per i teoremi precedenti, sappiamo che la probabilità che un minhash tra i due insiemi corrisponda all'interno della banda è: 
+$$
+P(h(S_1) = h(S_2)) = sim(S_1, S_2) = 0.8
+$$
+La probabilità che tutti i minhash corrispondano all'interno di una banda (ricordando $k=5$) è $(0.8)^5 = 0.328$. Se consideriamo $g(S_i)$ l'insieme degli hash in tutte le bande, avremo che: 
+$$
+g(S_1) = < h_1(S_1), \dots, h_L(S_1)> \\
+g(S_2) = < h_2(S_2), \dots, h_L(S_2)> \\ 
+P(g(S_1) \cong g(S_2) ) = = 1-(1-s^k)^{L} = 1-(1-0.8^5)^{20} = 0.999
+$$
+Quindi $S_1$ è simile ad $S_2$ con probabilità del $99.9$%. Osserviamo come si comporta la funzione con coppie dissimili, quindi supponiamo: 
+$$
+sim(S_1, S_2) = 0.83 < t
+$$
+Avremo che 
+$$
+P(g(S_1) \cong g(S_2) ) = 1-(1-0.3^5)^{20} = 0.047
+$$
+Quindi $S_1$ è simile ad $S_2$ con probabilità del $4.7$%, ovvero è poco probabile che essi risultino simili. 
+
+##### Caso ideale
+
+Idealmente vorremmo che 
+$$
+\begin{cases}
+\forall S_i, S_j : sim(S_i,S_j) < t \Longrightarrow p(g(S_i) \cong g(S_j)) \approx 0 \\
+\forall S_i, S_j : sim(S_i,S_j) \ge t \Longrightarrow p(g(S_i) \cong g(S_j)) \approx 1
+\end{cases}
+$$
+
+
+#### 5.4.4 Algoritmo LSH offline
+
+* Per ogni feature vector $p$, si calcola $g(p) = < h_1(p), h_2(p), \dots, h_L(p)> $. 
+* Per ogni $i = 1,2,\dots, L$ si crea un clustering $C_i$ (insieme di cluster differente per ogni banda) tale che due feature vector $p$ e $q$ si trovino nello stesso cluster se $h_i(p) = h_i(q)$. 
+* Si crea un grafo non direzionato in cui i nodi $p$ e $q$ sono connessi se esiste un cluster che li contiene entrambi. 
+* Si calcolano le componenti connesse del grafo per identificare vettori simili. 
+
+
+
+> Offline algorithm from Mining of massive datasets 
+>
+> If we have minhash signatures for the items, an effective way to choose the
+> hashings is to divide the signature matrix into b bands consisting of r rows
+> each. For each band, there is a hash function that takes vectors of r integers
+> (the portion of one column within that band) and hashes them to some large
+> number of buckets. We can use the same hash function for all the bands, but
+> we use a separate bucket array for each band, so columns with the same vector
+> in different bands will not hash to the same bucket.
+
+
+
+### 5.4 Famiglie di funzioni LSH
+
+L'esempio visto precedentemente è un esempio di famiglia di funzioni LSH, che possono essere combinate per distinguere coppie di punti distanti tra loro da coppie di punti vicini tra loro.
+
+Una funzione ***locality sensitive*** è una funzione che soddisfa le seguenti 3 *condizioni*: 
+
+* Le coppie vicine devono essere candidate con probabilità maggiore rispetto alle coppie lontane. 
+* Deve assicurare l'indipendenza statistica per ogni operazione svolta. 
+* Deve essere efficiente: 
+  * Il tempo necessario ad identificare le coppie candidate deve essere molto minore rispetto al tempo necessario per calcolare la distanza tra tutte le coppie. 
+  * Si deve poter combinare per costruire delle funzioni più potenti che permettano di evitare falsi positivi e falsi negativi. 
+
+Una funzione ***locality sensitive*** prende in input 2 oggetti e decide se essi sono simili o meno, o perlomeno candidati ad essere simili (per poi computare la distanza successivamente su un insieme ristretto di oggetti)
+$$
+f(x) = f(y) \Longrightarrow \text{x e y sono oggetti simili} \\
+f(x) \ne f(y) \Longrightarrow \text{x e y sono oggetti dissimili}
+$$
+Una collezione di funzioni locality sensitive prende il nome di ***famiglia di funzioni locality sensitive***. Diciamo che una famiglia $F$ è $(d_1, d_2, p_1, p_2)$-*sensitive* se $\forall f \in F$: 
+
+* Se la ***distanza*** $d(x,y) \le d_1$ allora la ***probabilità*** che $f(x) = f(y)$ è almeno $p_1$ 
+* Se la ***distanza*** $d(x,y) \ge d_2$ allora la ***probabilità*** che $f(x) = f(y)$ è al più $p_2$ 
+
+ 
+
+#### 5.4.1 Amplificare una famiglia locality sensitive
+
+
+
+##### Costruzione in AND
+
+Si costruisca una nuova famiglia $F'$ dove ogni funzione $f \in F'$ è costruita da un insieme $R$ di cardinalità $k$ di funzioni della famiglia $F$. Asseriamo che $f$ è costruita da $R = \{f_1, \dots, f_k\}$ tale che 
+$$
+f(x) = f(y) \Longleftrightarrow f_i(x) =f_i(y) \space \forall\space i = 1, \dots, k
+$$
+Questo processo è chiamato ***costruzione in AND*** e garantisce la costruzione di una famiglia $F'$ $(d_1, d_2, p_1^k, p_2^k)$-*sensitive*. In questo modo andiamo a ridurre entrambe le probabilità e, di conseguenza, il numero di *falsi positivi*.
+
+
+
+##### Costruzione in OR 
+
+Si costruisca una nuova famiglia $F'$ dove ogni funzione $f \in F'$ è costruita da un insieme $B$ di cardinalità $L$ di funzioni della famiglia $F$. Asseriamo che $f$ è costruita da $R =\{f_1, \dots, f_L\}$ tale che 
+$$
+f(x) = f(y) \Longleftrightarrow \exist f_i \in B : f_i(x) =f_i(y)
+$$
+Questo processo è chiamato ***costruzione in OR*** e garantisce la costruzione di una famiglia $F'$ $(d_1, d_2, 1 - (1-p_1)^L, 1 - (1-p_2)^L)$-*sensitive*.  In questo modo andiamo ad aumentare entrambe le probabilità e, di conseguenza, riduciamo il numero di *falsi negativi*.
+
+>  Le costruzioni in OR e in AND possono essere combinate in cascata per spingere la probabilità bassa a 0 e la probabilità alta a 1. 
+
+
+
+##### Esempio
+
+Partiamo da una famiglia $(.2, .8, .8, .2)$-*sensitive* ed eseguiamo una prima costruzione: 
+$$
+F \to F'
+$$
+Applicando in cascata prima una costruzione in AND con $k=4$ e dopodiché una costruzione in OR con $L=4$. 
+Le probabilità $p_1$ e $p_2$ della nuova famiglia $F'$ saranno: 
+$$
+p_1 = 1 - (1 - 0.8^4)^4 = 0.8785 \approx 0.9\\
+p_2 = 1 - (1 - 0.2^4)^4 = 0.0064 \approx 0
+$$
+Quindi $F'$ sarà una famiglia $(.2, .8, 1 - (1 - 0.8^4)^4, 1 - (1 - 0.2^4)^4)$-*sensitive*. Osserviamo che con questo approccio, la probabilità più bassa $p_2$ è stata schiacciata a 0. 
+
+Se costruiamo la famiglia $F'$ in maniera inversa, quindi applicando in cascata prima l'OR e poi l'AND, avremo che le probabilità saranno: 
+$$
+p_1 = [1 - (1 - 0.8)^4]^4 = 0.9936 \approx 1\\
+p_2 = [1 - (1 - 0.2)^4]^4 = 0.1215 \approx 0.1
+$$
+Quindi $F'$ sarà una famiglia $(.2, .8, [1 - (1 - 0.8)^4]^4, [1 - (1 - 0.2)^4]^4)$-*sensitive*. Invertendo il processo, la probabilità più alta $p_2$ è stata spinta verso 1.
+
+Tentiamo adesso di costruire una famiglia applicando in cascata le seguenti costruzioni: 
+$$
+F \to F' \to F''
+$$
+Dove da $F$ ad $F'$ applichiamo prima un AND ($k$=4) e poi un OR ($L=4$) e da $F'$ ad $F''$ applichiamo prima un OR ($L=4$) e poi un AND ($k = 4$). Così facendo, le probabilità $p_1$ e $p_2$ saranno ricalcolate come segue: 
+$$
+p_1 = \{1 - \{ 1 - [ 1 - (1 - 0.8^k)^L ] \}^L \}^k = \{1 - \{ 1 - [ 1 - (1 - 0.8^4)^4 ] \}^4 \}^4 
+\approx 1 \\
+p_2 = \{1 - \{ 1 - [ 1 - (1 - 0.2^k)^L ] \}^L \}^k = \{1 - \{ 1 - [ 1 - (1 - 0.2^4)^4 ] \}^4 \}^4
+\approx 0
+$$
+Plottando queste funzioni, avremo una curva molto più ripida che approssima meglio la step function ideale. Una soluzione del genere riduce molto bene sia il numero di falsi positivi che il numero di falsi negativi. 

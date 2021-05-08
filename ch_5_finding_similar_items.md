@@ -778,10 +778,14 @@ $$
 
 ##### Distanza Euclidea
 
-Siano $x$ ed $y$ due vettori, la distanza Euclidea è definita come
-$$
-d(x,y) = \sqrt{ \sum_i(x_i - y_i)^2 }
-$$
+Per semplicità, supponiamo di trovarci in uno spazio bidimensionale. Ogni funzione hash $f$ della famiglia $F$ è associata ad una retta $r$ casuale nello spazio. Fissata una costante $a$ dividiamo la retta in segmenti di lunghezza $a$.
 
+![image-20210508153805041](ch_5_finding_similar_items.assets/image-20210508153805041.png)
 
-> 57:29
+I segmenti sulla linea corrispondono ai bucket in cui la funzione hash $f$ colloca i punti. Il generico punto $A$ è collocato nel bucket (segmento) in cui propria proiezione rispetto alla retta $r$ va a finire. Se la distanza tra due punti $d$ è molto più piccola rispetto alla costante $a$, allora c'è una buona chance che i due punti vengano hashati nello stesso bucket, in tal caso, la funzione $f$ dichiara che i punti sono uguali. 
+
+**a)** Se $d \le \frac a 2$, allora vi è almeno il 50% ($p_1=\frac 1 2$) di possibilità che essi ricadano nello stesso bucket. Se l'angolo $\theta$ formato dai due punti rispetto alla retta $r$ è grande, allora la probabilità che i punti ricadano nello stesso bucket è ancora maggiore: se $\theta =90°$ rispetto ad $r$, allora i due punti ricadranno per certo nello stesso bucket (la retta che passa tra i due punti è perpendicolare alla retta $r$). 
+
+**b)** Supponiamo che $d > a$, quindi che i punti siano distanti tra loro: per cadere all'interno dello stesso bucket è necessario che $d \cdot \cos\theta \le a$. Basti guardare la figura, proiettando la distanza sulla retta essa è più grande di $a$, quindi i punti staranno per certo in bucket differenti. Se $d \ge 2a$ allora la possibilità che i due punti ricadano nello stesso bucket è inferiore ad $\frac 1 3$: infatti affinché il coseno sia inferiore ad $\frac 1 2$ (in modo da far rientrare le proiezioni nello stesso bucket) l'angolo $\theta$ deve stare tra 60° e 90°, ma l'angolo può assumere con probabilità uniforme un valore compreso tra 0° e 90°, quindi la probabilità che assuma quel range di valori è effettivamente $\frac 1 3$. 
+
+La famiglia appena mostrata è una famiglia $(\frac a 2, 2a, \frac 1 2, \frac 1 3)$-*sensitive*. Il problema legato a tale famiglia sono le probabilità che non variano al variare del coefficiente $a$. Tuttavia, è possibile effettuare delle costruzioni in AND ed in OR per manipolare tali probabilità. 

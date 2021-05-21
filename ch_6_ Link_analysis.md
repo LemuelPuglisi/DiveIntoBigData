@@ -162,5 +162,117 @@ A = \beta M + (1 - \beta)\left[\frac 1 N\right]_{N \times N}
 $$
 Ancora una volta è possibile applicare la power iteration per trovare il vettore dei rank $r$, infatti
 $$
+r = A \cdot r
+$$
+
+
+#### 6.1.7 Ottenere l'equazione
+
+Aggiungere il teleport al PageRank equivale a tassare ogni pagina di una frazione $(1-\beta)$ del suo score e ridistribuirlo uniformemente tra i nodi. Partendo dall'equazione
+$$
 r = A \cdot r 
 $$
+E sapendo che $A$ è definita come nella equazione (12), possiamo scrivere che: 
+$$
+r_j = \sum_{i=1}^N \left[ \beta M_{ji} + \frac{1-\beta}{N} \right] \cdot r_i \\ 
+= \beta\sum_{i=1}^N M_{ji} \cdot r_i + \frac{1-\beta}{N} \sum_{i=1}^N r_i
+$$
+Ma ricordando il vincolo $\sum_i r_i = 1$ possiamo scrivere
+$$
+r_j = \beta\sum_{i=1}^N M_{ji} \cdot r_i + \frac{1-\beta}{N}
+$$
+Che equivale a scrivere 
+$$
+r = \beta M \cdot r + \left[\frac{1-\beta}{N}\right]_N
+$$
+
+
+#### 6.1.8 Algoritmo completo
+
+Presi in input
+
+* Il grafo diretto $G$ (con spider-trap e dead-end)
+* Il parametro $\beta$
+
+L'algoritmo consiste nei seguenti passi: 
+
+* Si inizializza $r^{(0)}_j = \frac 1 N$ 
+* Sinché $\sum_j |r_j^{(t)} - r_j^{(t-1)}| > \epsilon$ si ripete: 
+  * Per ogni $j$: 
+    * $r_j^{(t+1)} = \sum_{i \to j} \beta \frac{r_i^{(t)}}{d_i}$ se $d_j^{(in)} \ne 0$ 
+    * $r_j^{(t+1)} = 0$ se $d_j^{(in)} = 0$
+  * Per ogni $j$: 
+    * $r_j^{(t+1)} = r_j^{(t+1)} + \frac{1-S}{N}$  dove $S = \sum_j r_j^{(t+1)}$
+  * Si assegna $r^{(t)} \leftarrow r^{t+1}$
+* Si ritorna in output $r^{(t)}$
+
+Si noti che nell'algoritmo non si aggiunge ad $r^{(t+1)}$ direttamente un valore $\frac {(1-\beta)} {N}$, ma si passa per una variabile intermedia $S$. Ciò è fatto per evitare di normalizzare il vettore $r$ alla fine di ogni iterazione (per rispettare il vincolo tale che la somma delle componenti sia 1). Una volta aggiornato $r^{(t+1)}$ si sommano in $S$ tutte le sue componenti e si ottiene un valore $S < 1$. Vogliamo che la somma delle componenti sia 1, quindi distribuiamo il residuo $1-S$ uniformemente alle $N$ componenti. Il passo è analogo ad aggiornare il vettore $r$ con la regola del PageRank e normalizzare alla fine. 
+
+
+
+### 6.2 Ingegnerizzazioni del PageRank
+
+Il passo chiave del PageRank è la moltiplicazione tra la matrice $A$ ed il vettore $r$. L'algoritmo è semplice se si ha memoria principale a sufficienza. Supponiamo che il numero $N$ di pagine sia $1$ miliardo e che ogni entry occupi $4$ byte. I vettori $r_{t+1}$ ed $r_{t}$ occupano circa $8$ GB (2 miliardi di entries). La matrice $A$ ha $N \times N$ entries, ovvero $10^{18}$, che è un numero davvero grande.   
+
+
+
+#### 6.2.1 Matrice di adiacenza sparsa
+
+La matrice di adiacenza del grafo del web è molto sparsa, risulta quindi insensato scegliere (nella pratica) una rappresentazione come quella matriciale. È possibile codificare la matrice utilizzando solo le entry diverse da 0, con uno spazio occupato proporzionale al numero di link (es. con le liste di adiacenza). 
+
+
+
+#### 6.2.1 Operazioni in memoria secondaria
+
+Supponiamo che solo $r^{(t+1)}$ stia in memoria, mentre la matrice $M$ e $r^{(t)}$ siano conservati sul disco. Possiamo modificare l'algoritmo PageRank ed operare nel seguente modo: 
+
+* Inizializziamo tutte le entry di $r^{(t+1)}$ a $\frac{(1-\beta)}{N}$
+* Per ogni nodo $i$:
+  * Si legge sul disco $d_i, dest_1, dest_2, \dots, dest_{d_i}, r_i^{(t)}$ ($dest$ = outlink)
+  * Per ogni $j = 1, \dots, N$ si aggiorna $r^{(t+1)}$:
+    *  $r^{(t+1)}_j = r^{(t+1)}_j +  \beta \frac{r_i^{(t)}}{d_i}$
+
+Ad ogni iterazione bisogna leggere $r^{(t)}$ ed $M$ dal disco e scrivere $r^{(t+1)}$ su disco, quindi il costo per iterazione del power method è $2|r| + |M|$. 
+
+![image-20210521162424440](ch_6_ Link_analysis.assets/image-20210521162424440.png)
+
+
+
+#### 6.2.2 Aggiornamento block-based
+
+Se lo spazio in memoria principale non fosse sufficiente ad ospiare $r^{(t+1)}$, si potrebbe pensare di suddividere il vettore in $k$ blocchi che entrano in memoria. In tal caso si scansionerebbero $M$ ed $r^{(t)}$ una volta per ogni blocco, con un costo per iterazione di power method pari a $k(|r| + |M|) + |r|$. 
+
+Tuttavia possiamo ottimizzare l'algoritmo escludendo del lavoro inutile: ipotizziamo di avere in memoria il blocco di $r$ di indici $[0,1]$. Iniziando per $0$, andiamo a recuperare la lista di adiacenza e controlliamo i suoi outlink. Supponiamo che gli outlink di 0 siano $[1,5,6]$, allora anziché aggiornare tutti gli outlink di 0, si aggiornano solo quelli contenuti nel blocco, in questo caso $[1]$. 
+
+![image-20210521162503544](ch_6_ Link_analysis.assets/image-20210521162503544.png)
+
+
+
+#### 6.2.3 Block-Stripe Update Algorithm
+
+Nel paragrafo precedente abbiamo un algoritmo che, per ogni iterazione, legge la matrice $M$ (che è molto più grande di $r$) $k$ volte. Per evitare questa lettura continua è possibile suddividere $M$ in striscie: ogni striscia conterrà solo i *nodi destinazione* del corrispondente blocco in $r^{(t+1)}$. Avremo un overhead per striscia trascurabile ed un costo per iterazione di power metodo di $|M|(1 + \epsilon) + (k+1)|r|$ ($\epsilon$ indica l'overhead). 
+
+![image-20210521162544312](ch_6_ Link_analysis.assets/image-20210521162544312.png)
+
+
+
+### 6.3 Topic-Specific PageRank
+
+Supponiamo di immetere la query "trojan" su un motore di ricerca: la ricerca potrebbe essere legata alla sicurezza informatica, alla storia (cavallo di Troia) etc... per cui è necessario un processo di disambiguazione. L'idea del topic-specific PageRank consiste nell'aggiungere un bias alla random walk: quando il walker si teletrasporta, sceglie una pagina da un insieme $S$, chiamato insieme di teletrasporto (*teleport set*). $S$ contiene solo pagine che sono rilevanti per il particolare topic (ottenibile da strutture come le Open Directory). Per ogni teleport set $S$, otteniamo un vettore $r_s$ specifico che ci indica l'importanza delle pagina per il particolare topic. 
+
+
+
+#### 6.3.1 Formulazione matriciale
+
+Per far si che questo funzioni è necessario aggiornare il teletrasporto nella formulazione del PageRank e definire la matrice $A$ per casi: 
+$$
+A_{ij} = \begin{cases}
+\beta M_{ij} + \frac{(1-\beta)}{|S|} \text{ if } i \in S \\
+\beta M_{ij} + 0 \text{ otherwise}
+\end{cases}
+$$
+La matrice $A$ è ancora stocastica. Vengono pesate allo stesso modo tutte le pagine all'interno del teleport set $S$. È possibile anche assegnare pesi differenti alle pagine con soluzioni più sofisticate. 
+
+Essendovi un teleport set $(S_1, \dots, S_k)$ per ogni topic, avremo più vettori di rank $(r_{S_1}, \dots, r_{S_k})$ calcolati considerando di volta in volta un teleport set differente. Così facendo si ottengono dei vettori di importanza delle pagine differenti per ogni topic. 
+
+[1:17:50]

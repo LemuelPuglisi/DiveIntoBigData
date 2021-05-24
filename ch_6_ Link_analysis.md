@@ -275,4 +275,65 @@ La matrice $A$ è ancora stocastica. Vengono pesate allo stesso modo tutte le pa
 
 Essendovi un teleport set $(S_1, \dots, S_k)$ per ogni topic, avremo più vettori di rank $(r_{S_1}, \dots, r_{S_k})$ calcolati considerando di volta in volta un teleport set differente. Così facendo si ottengono dei vettori di importanza delle pagine differenti per ogni topic. 
 
-[1:17:50]
+
+
+### 6.4 SimRank
+
+L'algoritmo SimRank serve a misurare la similarità (o prossimità) dei nodi di un grafo. Supponiamo di trovarci in un grafo $k$-partito con $k$ tipi di nodi. Supponiamo di voler misurare il SimRank score per un nodo $u$, l'idea dietro l'algoritmo consiste in una random walk partendo da $u$ con un teleport set $S=\{u\}$ contenente solo il nodo analizzato. Questo particolare tipo di random walk prende il nome di ***random walk with restart***, poiché il teleport riporta sempre al punto di partenza. 
+
+
+
+#### 6.4.1 Esempio 
+
+Consideriamo un grafo tripartito con tre tipi di nodi: Autori, Conferenze e Tag. Ogni autore è collegato a diverse conferenze ed ogni conferenza è collegata a diversi Tag. Siamo interessati a calcolare la similarità tra gli autori del grafo. Si procede calcolando il SimRank per ogni autore, tale score conterrà dei valori interpretabili come la similarità con tutti i nodi del grafo.
+
+
+
+### 6.5 Web spam 
+
+Si considera **spamming** qualsiasi azione deliberata per far avanzare una pagina web nelle posizioni dei risultati di un search engine, con un valore molto più alto di quello reale. Nel caso di studio, lo spam equivale ad una pagina web emersa come risultato dello spamming. Una più ampia definizione si trova nel contesto della Search Engine Optimization (SEO).  
+
+I primi Search Engine non riuscivano a bloccare lo spam poiché si basavano esclusivamente sul contenuto testuale delle pagine in relazione alla query di ricerca. Supponiamo che lo spammer abbia un negozio di magliette e che la parola "tennis" sia il trend del momento. Allora basterà aggiungere alla propria pagina e-commerce tante volte la parola "tennis" e nascondere il testo in qualche modo. Se un utente avesse cercato "tennis", lo shop di magliette sarebbe stato ben posizionato nei risultati del motore di ricerca. Google fornì una soluzione al problema basandosi su un concetto semplice: "Credere in quello che dicono le persone di te e non a quello che dici tu di te stesso". Quindi se le pagine che puntavano con dei link allo shop di magliette non parlavano di tennis, allora molto probabilmente lo shop di magliette non parla di tennis, quindi viene penalizzato nella ricerca. 
+
+
+
+#### 6.5.1 Spam farm 
+
+Quando Google divenne il motore di ricerca dominante, gli spammer si misero alla prova cercando di eludere il sistema: vennero fuori le *spam farm*. Categorizziamo le pagine in base alla accessibilità dello spammer: 
+
+* Le pagine *inaccessibili* sono pagine a cui lo spammer non ha accesso
+* Le pagine *accessibili* sono pagine in cui lo spammer può inserire contenuto limitatamente 
+* Le pagine *possedute* dallo spammer sono le pagine che si vuole far emergere
+
+La spam farm consiste nell'andare a creare il maggior numero di link che vanno da pagine accessibili alle pagine possedute, di cui si vuole migliorare il ranking. Esempi di pagine accessibili sono i blog o i social network, dove è possibile inserire del contenuto. 
+
+![image-20210524123509988](ch_6_ Link_analysis.assets/image-20210524123509988.png)
+
+#### 6.5.2 Spam gain 
+
+Supponiamo di voler calcolare lo score del PageRank di una pagina $t$ su cui agisce una spam farm. Sia $x$ il contributo (incognito) di PageRank dato a $t$ dalle pagine accessibili. Supponiamo che $t$ sia collegato ad $M$ pagine possedute e ogni pagina posseduta sia collegata solamente a $t$. Sia $y$ il PageRank di $t$, allora possiamo dire che $t$ cede ad ognuna delle M pagine accessibili uno score pari a 
+$$
+\frac{\beta y}{M} + \frac{1-\beta}{N}
+$$
+Dato che le pagine possedute sono collegate solo a $t$, restituiranno questo score, tuttavia ridotto a $\beta$ a causa del contributo del teletrasporto. Quindi sommando questi contributi ad $x$ e considerando il teletrasporto, abbiamo che $y$ è definito come segue   
+$$
+y = x + \beta M \left( \frac{\beta y}{M} + \frac{1-\beta}{N} \right) + \frac{1-\beta}{N}
+$$
+Se risolviamo l'equazione per $y$
+$$
+y = x + \beta M \left( \frac{\beta y}{M} + \frac{1-\beta}{N} \right) + \frac{1-\beta}{N} \\
+
+y = x + \beta^2 y + \frac{M\beta(1-\beta)}{N} + \frac{1-\beta}{N} \\
+
+y(1-\beta^2) = x + \frac{M\beta(1-\beta)}{N} + \frac{1-\beta}{N} \\
+
+y = \frac{x}{1-\beta^2} + \frac{\beta(1-\beta)}{(1-\beta)(1+\beta)}\frac{M}{N} + \frac{1-\beta}{N(1-\beta)(1+\beta)} \\
+
+y = \frac{x}{1-\beta^2} + \frac{\beta}{1+\beta}\frac{M}{N} + \frac{1}{N(1+\beta)} \\
+$$
+È possibile omettere dall'equazione il termine $\frac{1}{N(1+\beta)}$ poiché prossimo a 0, quindi riscriviamo
+$$
+y = \frac{x}{1 - \beta^2} + \frac{1}{1+\beta}\frac{M}{N} 
+$$
+Essendo $M$ al numeratore, aumentando il numero di pagine possedute è possibile aumentare il rank della pagina $t$. 
+

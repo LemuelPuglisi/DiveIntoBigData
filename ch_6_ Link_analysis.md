@@ -337,3 +337,133 @@ y = \frac{x}{1 - \beta^2} + \frac{1}{1+\beta}\frac{M}{N}
 $$
 Essendo $M$ al numeratore, aumentando il numero di pagine possedute è possibile aumentare il rank della pagina $t$. 
 
+> Google Bombing 
+>
+> Un'altro modo di ingannare un search engine è il [bombing](https://it.wikipedia.org/wiki/Google_bombing). Consiste nel far puntare le pagine proprie e quelle accessibili, che trattino di uno specifico topic $x$, verso una pagina web non accessibile, aumentando il punteggio di quest'ultima nei confronti del topic $x$. Un tipico esempio è il bombing al presidente Bush, associato a topic denigratori. 
+
+
+
+### 6.6 TrustRank
+
+Un approccio naive per combattere il link spam consiste nell'inserire in una blacklist tutte le strutture che sembrino simili a delle spam farm. Tuttavia, è stato sviluppato un algoritmo che permette di calcolare un punteggio legato alla affidabilità della fonte, chiamato TrustRank: consiste in un topic-specific PageRank, con un teleport set di pagine trusted (affidabili), come i siti governativi (.gov), i siti educazionali (.edu), etc. 
+
+
+
+#### 6.6.1 Implementazione del TrustRank
+
+Il principio di base è quello di approssimare l'*isolamento*: è raro che una pagina "buona" punti ad una pagina "cattiva" (spam). Si parte da un insieme di pagine web, chiamato *seed set*, curato manualmente. Risulta particolarmente dispendioso creare un seed set, per cui è un insieme molto ridotto. 
+
+L'insieme di teletrasporto $S$ corrisponde al seed set. Si inizializza ad 1 il valore di  trust di ogni pagina all'interno di $S$, mentre si inizializza a 0 la trust delle pagine esterne ad $S$. Il TrustRank propaga la trust dalle pagine in $S$ alle pagine esterne, come succede nel PageRank. Sia $O_p$ l'insieme di *out-link* della pagina $p$, allora per ogni pagina $q \in O_p$, $q$ riceverà da $p$ un contributo di trust pari a 
+$$
+\beta \cdot \frac{t_p}{|O_p|} \text{ con } \beta \in [0,1]
+$$
+Dove $\beta$ ci ricorda che una parte di  trust è riservata al meccansismo di teleport a delle pagine trusted. La  trust è additiva, quindi la trust $t_p$ della pagina $p$ è la somma di tutte le trust conferite a $p$ delle pagine che la linkano. Entro un fattore di scala, il TrustRank corrisponde al PageRank, con le pagine trust come teleport set. Alcune osservazioni: 
+
+* **Attenuazione della trust**: la trust decresce con la distanza nel grafo
+* **Trust splitting**: più sono gli outlink, minore sarà il contributo di trust trasferito.
+
+
+
+#### 6.6.2 Costruzione del Seed Set
+
+Il seed set è manualmente curato e deve essere più piccolo possibile. Allo stesso tempo esso deve assicurare che ogni pagina buona ottenga un trust rank sopra la soglia: le pagine buone devono essere raggiungibili dal seed seed con un cammino relativamente corto. Da queste osservazioni in contrasto possiamo comprendere quanto sia complesso prelevare un buon seed set. Le due principali tecniche sono: 
+
+* Eseguire un PageRank e selezionare le $k$ pagine con rank più alto (difficilmente di spam);
+* Utilizzare delle pagine la cui appartenenza è controllata (.edu, .gov, .mil)
+
+
+
+### 6.7 HITS: Hub and Authorities 
+
+HITS (Hyperlink-Induced Topic Search) è un algoritmo, sviluppato da Jon Kleinberg, di valutazione delle pagine web in funzione dei link. Pubblicato nello stesso periodo del PageRank, ha avuto meno successo ma introduce comunque un'idea interessante. Supponiamo di voler trovare un buon quotidiano: anziché trovare i quotidiani migliori da soli, ci rivolgiamo ad un esperto che sappia consigliarci, linkando in modo coordinato a buoni quotidiani. Ancora una volta si presenta il concetto di link come voti. Definiamo due score: 
+
+* Qualità di esperto (**hub**): voti totali ricevuti dalle authority che puntano a loro
+* Qualità sui contenuti (**authority**): voti totali ricevuti dagli esperti
+
+Ogni pagina avrà entrambi gli score, ed in base a questi (le pagine interessanti) si divideranno in due classi: 
+
+* Le **Authority**  sono pagine che contengono informazioni utili (Home di un quotidiano)
+* Gli **Hub** sono pagine che si collegano alle authority (Elenchi di quotidiani)
+
+![image-20210531155327426](ch_6_ Link_analysis.assets/image-20210531155327426.png)
+
+L'intuizione è che un buon *hub* linka diverse buone *authority*, ed una buona *authority* è linkata da diversi buoni *hub*. Vediamo una approssimazione intuitiva della procedura: 
+
+* Si inizializza lo score di hub ad 1 per ogni nodo 
+* Si calcola l'autority di ogni nodo sommando l'hub di ogni suo link **entrante**
+* Si calcola l'hub di ogni nodo sommando l'authority di ogni suo link **uscente**
+* Si riparte dal secondo step sino ad una stabilizzazione (con dovuti accorgimenti)
+
+
+
+![image-20210531161436930](ch_6_ Link_analysis.assets/image-20210531161436930.png)
+
+
+
+#### 6.7.1 Algoritmo
+
+Ogni pagina $i$ ha un authority score $a_i$ ed un hub score $h_i$. Al tempo 0 si inizializzano gli score per ogni nodo $j$ all'interno del grafo: 
+
+* $a_j^{(0)} = \frac{1}{\sqrt{N}}$
+* $h_j^{(0)} = \frac{1}{\sqrt{N}}$ 
+
+Dove $N$ è il numero di nodi. Si itera la seguente procedura sino alla convergenza: 
+
+* Per ogni nodo $i$ al tempo $t+1$ si calcola l'autority: 
+  * $a_i^{(t+1)} = \sum_{j \to i} h_j^{(t)}$
+* Per ogni nodo $i$ al tempo $t+1$ si calcola l'hub: 
+  * $h_i^{(t+1)} = \sum_{i \to j} a_j^{(t)}$
+* Si normalizzano i risultati imponendo
+  * $\sum_i\left(a_i^{(t+2)}\right)^2 = 1$
+  * $\sum_i\left(h_i^{(t+2)}\right)^2 = 1$
+
+L'algoritmo converge ad un singolo punto stabile.
+
+
+
+#### 6.7.2 Algoritmo in notazione vettoriale
+
+Indichiamo con $a=(a_1, \dots, a_N)$ il vettore di tutti gli autorithy score, e con $h = (h_1, \dots, h_N)$ il vettore di tutti gli hub score. Sia $A$ la matrice di adiacenza (ricordando che $A_{ij} = 1$ se $i \to j$, 0 altrimenti), allora possiamo scrivere che
+$$
+h_i = \sum_{i\to j} a_j = \sum_{j} A_{ij} \cdot a_j
+$$
+Ne segue che $h = A \cdot a$. In modo simile possiamo scrivere che 
+$$
+a_i = \sum_{j\to i} h_j = \sum_{j} A_{ji} \cdot h_j
+$$
+Ne segue che $a = A^T \cdot h$. Quindi riscriviamo l'algoritmo in notazione vettoriale, inizializzando: 
+
+* $a_i = h_i = \frac{1}{\sqrt{n}}$
+
+E iterando sino a convergenza
+
+* $h = A \cdot a$
+* $a = A^T \cdot h$ 
+* Si normalizzano $a$ ed $h$
+
+I criteri di convergenza, considerando un valore $\epsilon$ piccolo, sono:
+
+* $\sum_i \left( h_i^{(t)} - h_i^{(t+1)} \right)^2 < \epsilon$
+* $\sum_i \left( a_i^{(t)} - a_i^{(t+1)} \right)^2 < \epsilon$
+
+Possiamo incorporare la normalizzazione nei passi di aggiornamento andando a definire 
+
+* $\lambda = \frac{1}{\sum h_i}$
+* $\mu = \frac{1}{\sum a_i}$
+
+E modificando gli step di aggiornamento come segue: 
+
+* $h = \lambda \cdot A \cdot a$
+* $a = \mu \cdot A^T \cdot h$
+
+È possibile effettuare delle sostituzioni: 
+
+* $h = \lambda\mu \cdot A \cdot A^T \cdot h$
+* $a = \lambda\mu \cdot A^T \cdot A \cdot a$
+
+Sotto una assunzione ragionevole di $A$, l'algoritmo HITS converge a dei vettori $h^*$ e $a^*$ tali che
+
+* $h^*$ è l'autovettore principale di $AA^T$
+* $a^*$ è l'autovettore principale di $A^TA$ 
+* (supp.) $\lambda \mu = 1$ è l'autovalore
+

@@ -477,12 +477,12 @@ $$
 Dato che per $D$ è una matrice diagonale, allora tutti i valori al di fuori della diagonale varranno 0. Inoltre la matrice di adiacenza ha valori diversi da 0 solo se esiste un arco tra i due nodi, quindi riscriviamo l'espressione come segue: 
 $$
 \sum_{i=1}^n D_{ij}x_i^2 - 
-\sum_{i \to j}  2x_i x_j
+\sum_{(i,j) \in E}  2x_i x_j
 $$
 Essendo un grafo non direzionato considereremo al secondo membro lo stesso arco 2 volte. Osserviamo che, per ogni arco presente nel grafo, saranno presenti $x_i^2$ ed $x_j^2$ dal primo membro, e $2x_ix_j$ al secondo membro. Questo sembra essere proprio un quadrato di binomio, quindi riscriviamo: 
 $$
 \sum_{(i,j) \in E} (x_i^2 + x_j^2 - 2x_ix_j) = 
-\sum_{(i,j) \in E} (x_i - x_j)^2 
+\sum_{(i,j) \in E} (x_i - x_j)^2
 $$
 Imponiamo dei vincoli sul vettore $x$: 
 
@@ -496,7 +496,7 @@ $$
 \lambda_2 = \min_{x} \frac{\sum_{(i,j) \in E} (x_i - x_j)^2}{\sum_i x_i^2} = 
 \min_{x} \sum_{(i,j) \in E} (x_i - x_j)^2
 $$
-Tenendo conto dei vincoli imposti (essendo il denominatore pari ad 1 è possibile rimuoverlo dalla minimizzazione). Nella pratica vogliamo assegnare nel vettore $x$ dei valori positivi ai nodi di un gruppo e dei valori negativi ai nodi dell'altro gruppo **tale che** vi siano pochi archi che attraversino lo 0. 
+Tenendo conto dei vincoli imposti (essendo il denominatore pari ad 1 è possibile rimuoverlo dalla minimizzazione). Nella pratica vogliamo assegnar nel vettore $x$ dei valori positivi ai nodi di un gruppo e dei valori negativi ai nodi dell'altro gruppo **tale che** vi siano pochi archi che attraversino lo 0. 
 
 ![image-20210601174827673](ch_7_communities.assets/image-20210601174827673.png)
 
@@ -528,5 +528,170 @@ Vale che
 
 
 
-[23:44, lezione 21]
+##### Approssimazione garantita
 
+Ricordiamo che: se un grafo $G(V,E)$ ha una **espansione** $\alpha$, allora è garantito che comunque preso un sottoinsieme di nodi $S \subseteq V$ il numero di archi uscenti da $S$ è maggiore o uguale a $\alpha \min(|S|, |V \setminus S|)$. 
+
+Supponiamo di avere una partizione in $G$ in $A$ e $B$ dove $|A| \le |B|$, possiamo porre l'espansione $\alpha$ pari a: 
+$$
+\alpha = \frac{\text{#archi da A a B}}{|A|}
+$$
+allora possiamo garantire che l'autovalore di Fiedler $\lambda_2 \le 2\alpha$. L'espansione corrisponde al taglio ottimale applicabile ad un grafo. Tale approssimazione ci dice che ciò che troviamo con lo spectral clustering è al più  due volte peggiore dello score ottimale $\alpha$. 
+
+**Dimostrazione**
+
+Sia $a = |A|$ e $b = |B|$, con $e = \text{#archi da A a B}$. Possiamo scegliere $x$ basato su $A$ e $B$ tale che: 
+$$
+\lambda_2 \le \frac{\sum_{(i,j) \in E}(x_i - x_j)^2}{\sum_j x_j^2} \le 2\alpha
+$$
+Impostiamo
+$$
+x_i = \begin{cases}
+-\frac 1 a \text{ se } i \in A \\
++\frac 1 b \text{ se } i \in B \\
+\end{cases}
+$$
+Ovviamente la somma di tutte le componenti di $x$ è pari a zero, poichè avremo $a$ volte $-\frac 1 a$ e $b$ volte $+\frac 1 b$, quindi
+$$
+a (-\frac{1}{a}) + b(\frac{1}{b}) = 0
+$$
+e viene rispettato il vincolo di ortogonalità tra $x$ ed il primo autovettore $(1, \dots, 1)$. Riscriviamo: 
+$$
+\frac{\sum_{(i,j) \in E}(x_i - x_j)^2}{\sum_j x_j^2} = 
+\frac{\sum_{i \in A, j \in B \\ (i,j) \in E} (-\frac 1 a + \frac 1 b)^2}{a (-\frac{1}{a})^2 + b(\frac{1}{b})^2} = 
+\frac{e (-\frac 1 a + \frac 1 b)^2}{\frac 1 a + \frac 1 b} = 
+e \left(-\frac 1 a + \frac 1 b\right)
+$$
+E da qui costruiamo la disequazione
+$$
+e \left(-\frac 1 a + \frac 1 b \right) \le 
+e \left(\frac 1 a + \frac 1 b \right) \le 
+e \left(\frac 1 a + \frac 1 a \right) = 
+e \left(\frac 2 a \right) = \\
+= 2 \frac{e}{a} =
+2\frac{\text{#archi da A a B}}{|A|} =
+2 \alpha
+$$
+Per transitività abbiamo che $\lambda_2 \le 2 \alpha$. 
+
+> Un lower bound per $\lambda_2$ (dato per buono) è che $\lambda_2 \ge \frac{\alpha^2}{2k_{max}}$, dove $k_{max}$ è il grado massimo nel grafo. 
+
+
+
+#### 7.3.7 Procedura
+
+Nella pratica, lo spectral clustering consiste in tre fasi: 
+
+* il **preprocessing**, dove si calcola la matrice Laplaciana $L$
+* la **decomposizione**, dove si identificano le autocoppie di $L$. 
+* Il **grouping** dove si mappano i nodi nei due gruppi in base alle componenti dell'autovettore corrispettivo all'autovalore $\lambda_2$ (es. valori negativi in $A$ e valori positivi in $B$). 
+
+![image-20210602094326726](C:\Users\Charlemagne\AppData\Roaming\Typora\typora-user-images\image-20210602094326726.png)
+
+
+
+#### 7.3.8 K-way Spectral clustering
+
+Possiamo partizionare il grafo in $k$ cluster utilizzando varie tecniche, le più utilizzate sono: 
+
+* **Recursive bi-partitioning**: Si applica ricorsivamente la bipartizione e si suddividono i cluster in  modo gerarchico (inefficiente, instabile).
+* **Cluster multiple eigenvector**: Si costruisce uno spazio ridotto utilizzando gli autovettori e si effettua il clustering per identificare le comunità. 
+
+Usare diversi autovettori aiuta ad approssimare il cut ottimale, sottolinea cluster coesivi e divide i nodi in uno spazio ben separato. 
+
+
+
+### 7.4 Sweep 
+
+L'algoritmo Sweep utilizza il PageRank per identificare dei cluster densi. Il grafo su cui si opera è spesso molto grande, per cui l'utilizzo di algoritmi di ordine maggiore a quello lineare è sconsigliabile. Lo Sweep ha un tempo proporzionale alla dimensione dei cluster (e non a quella del grafo). 
+
+
+
+#### 7.4.1 Idea
+
+Prendiamo un nodo *seed* $s$ ed eseguiamo un PageRank personalizzato con teleport set $\{s\}$. Se $s$ appartiene ad un cluster, allora il random surfer resterà con molta probabilità intrappolato all'interno di esso.
+
+
+
+#### 7.4.2 Conduttanza
+
+Prima di parlare dell'algoritmo in sé, è necessario introdurre il concetto di **conduttanza**. La conduttanza indica la connettività di un gruppo rispetto al resto della rete, relativa alla densità del gruppo. Ovviamente un buon cluster ha una bassa conduttanza. Sia $S \subseteq V$, la conduttanza è definita come segue: 
+$$
+\phi(S) = \frac
+{\text{#archi da } S \text{ a } (V \setminus S)}
+{\min(vol(S), 2m-Vol(S))} = 
+\frac{cut(S)}{\min(vol(S), 2m-Vol(S))}
+$$
+Dove ovviamente $vol(V) = 2m$ e quindi $vol(V \setminus S) = 2m - Vol(S)$, ed $m = |E|$. Utilizzando questo criterio come guida induce a produrre partizionamenti più bilanciati. 
+
+
+
+#### 7.4.3 Algoritmo
+
+L'algoritmo nei seguenti passi: 
+
+* Scegliere un nodo $s$ di interesse
+* Eseguire il Personalized-PageRank (PPR) con teleport $\{s\}$
+* Ordinare i nodi in modo decrescente rispetto allo score PPR
+  * Quindi si produce una sequenza $r_1, r_2, \dots, r_n$
+
+Dopodiché si procede con lo sweep: 
+
+* Si inizializza $A_0 = \empty$  
+* Per $t = 1, \dots, n$:
+  * $A_t = A_{t-1} \cup \{r_t\}$ 
+  * Si calcola la conduttanza per il cluster $\phi(A_t)$
+
+Dato che un buon cluster ha una bassa conduttanza, possiamo considerare come buon cluster il cluster che restituisca un minimo locale di $\phi(A_i)$.  
+
+![image-20210602111729481](C:\Users\Charlemagne\AppData\Roaming\Typora\typora-user-images\image-20210602111729481.png)
+
+
+
+##### Calcolo in tempo lineare
+
+La curva di Sweep può essere calcolata in tempo lineare: 
+
+* Iteriamo sui nodi
+* Manteniamo una tabella hash dei nodi in $A_t$
+* Calcoliamo $\phi(A_{t+1}) = \frac{cut(A_{t+1})}{vol(A_{t+1})}$ dove: 
+  * $vol(A_{t+1}) = vol(A_{t}) + d_{i+1}$
+  * $cut(A_{t+1}) = cut(A_{t}) + d_{i+1} - 2\text{#(archi da $u_{i+1}$ ad $A_t$})$ 
+
+
+
+#### 7.4.4 PageRank approssimato
+
+Il calcolo del PageRank può risultare oneroso se si tratta di un grafo molto grande. Esiste una versione approssimata del PageRank, chiamata PageRank Nibble, che consiste in un metodo veloce per calcolare il personalized page rank con teleport set $\{s\}$. Tale tecnica prende in input 3 parametri: 
+
+* Un nodo seme $s$
+* Un parametro $\beta$ di teleport
+* Un parametro $\epsilon$ per l'errore di approssimazione
+
+Il PPR approssimato (su grafi non direzionati) utilizza un concetto di **lazy random walk**, ovvero una variante del random walk che consiste nello star fermi nello stesso nodo con probabilità pari ad $\frac 1 2$, o camminare nel vicinato nell'altra metà dei casi. In equazioni: 
+$$
+r_u^{(t+1)} = \frac 1 2 r_u^{(t)} + 
+\frac 1 2 \sum_{i \to u} \frac 1 {d_u} r_i^{(t)}
+$$
+Allo stesso tempo si tiene traccia degli score PPR residui 
+$$
+q_u = p_u - r_u^{(t)}
+$$
+Dove $p_u$ è il PageRank score effettivo, mentre $r_u^{(t)}$ è quello approssimato. Se il residuo $q_u$ è troppo grande, ovvero quando
+$$
+\frac{q_u}{d_u} \ge \epsilon
+$$
+Allora si esegue un ulteriore step della random walk, altrimenti ci fermiamo per il nodo $u$ e passiamo ad un altro nodo. 
+
+Per arrivare al concetto di PageRank approssimato, basta osservare in maniera differente il PageRank:
+$$
+p_{\beta}(a) = (1-\beta) a + \beta p_{\beta}(M\cdot a) 
+$$
+Dove $p_{\beta}(a)$ è il PageRank con parametro di teletrasporto $\beta$ e vettore di teletrasporto $a$, mentre $p_{\beta}(M\cdot a)$ è il PageRank con parametro di teletrasporto $\beta$ e vettore di teletrasporto $M \cdot a$. 
+
+* $M$ è una matrice stocastica del PageRank
+* $M \cdot a$ è uno step del random walk
+
+Con probabilità $(1-\beta)$ si esegue una random walk di lunghezza 0, mentre con probabilità $\beta$ si fa un passo.
+
+> Circa 1:20:00

@@ -662,36 +662,62 @@ La curva di Sweep può essere calcolata in tempo lineare:
 
 #### 7.4.4 PageRank approssimato
 
-Il calcolo del PageRank può risultare oneroso se si tratta di un grafo molto grande. Esiste una versione approssimata del PageRank, chiamata PageRank Nibble, che consiste in un metodo veloce per calcolare il personalized page rank con teleport set $\{s\}$. Tale tecnica prende in input 3 parametri: 
+Ipotizziamo di effettuare un pagerank con teletrasporto a partire dal nodo $u$. Sia $q$ un vettore di residui con tutte le componenti nulle tranne la componente $q_u=1$. Supponiamo di voler approssimare il vettore $p$ che contiene i pagerank score con un vettore $r$ inizialmente posto a 0, ammettendo un errore controllato dalla costante $\epsilon$. Definiamo l'azione di push: 
 
-* Un nodo seme $s$
-* Un parametro $\beta$ di teleport
-* Un parametro $\epsilon$ per l'errore di approssimazione
+```
+    push(u, r, q): 
+        r' = r 
+        q' = q 
 
-Il PPR approssimato (su grafi non direzionati) utilizza un concetto di **lazy random walk**, ovvero una variante del random walk che consiste nello star fermi nello stesso nodo con probabilità pari ad $\frac 1 2$, o camminare nel vicinato nell'altra metà dei casi. In equazioni: 
+        # prendiamo (1-beta dal residuo) e cediamolo ad r'(u)
+        r'(u) = r(u) + (1-beta) * q(u)
+
+        # resta q(u)*beta residuo disponibile
+        # di questo ne teniamo solo la metà
+        q'(u) = (q(u) * beta) * 0.5
+
+        # cediamo l'altra metà al rank dei vicini di u 
+        for v : (v,u) in E: 
+            q'(v) = q(v) + 0.5*(beta * q(u))
+
+        # ritorniamo i vettori aggiornati
+        return r', q'
+	
+```
+
+Possiamo dare per assunto che il residuo sia tale che: 
+$$
+q_u = p_u - r_u
+$$
+Quindi se $q_u$ è alto vuol dire che nella approssimazione $r_u$ stiamo sottostimando il reale score $p_u$ del nodo $u$. Come facciamo a sapere se $q_u$ è alto? Possiamo ancora una volta dare per assunto che se si verifica
+$$
+\frac{q_u}{d_u} \ge \epsilon
+$$
+allora il residuo è alto. Quando non si verifica più tale condizione per il nodo $u$, allora abbiamo raggiunto una buona approssimazione del suo pagerank score. Quindi definiamo il PageRank approssimato come segue: 
+
+```
+
+	ApproxPageRank(S, beta, eps):
+		r = [0, ..., 0]
+		q = [0, ..., 1, ..., 0] # asserire il nodo di partenza
+		
+		while (esiste un nodo u per cui si verifica la condizione (47)): 
+			r, q = push(u, r, q)
+		
+		return r, q
+		
+```
+
+Questo algoritmo utilizza inoltre il lazy random walk, secondo la quale lo step di aggiornamento è definito come segue: 
 $$
 r_u^{(t+1)} = \frac 1 2 r_u^{(t)} + 
 \frac 1 2 \sum_{i \to u} \frac 1 {d_u} r_i^{(t)}
 $$
-Allo stesso tempo si tiene traccia degli score PPR residui 
-$$
-q_u = p_u - r_u^{(t)}
-$$
-Dove $p_u$ è il PageRank score effettivo, mentre $r_u^{(t)}$ è quello approssimato. Se il residuo $q_u$ è troppo grande, ovvero quando
-$$
-\frac{q_u}{d_u} \ge \epsilon
-$$
-Allora si esegue un ulteriore step della random walk, altrimenti ci fermiamo per il nodo $u$ e passiamo ad un altro nodo. 
+Ovvero con probabilità del $50$% si sta fermi, con la restante ci si muove. 
 
-Per arrivare al concetto di PageRank approssimato, basta osservare in maniera differente il PageRank:
-$$
-p_{\beta}(a) = (1-\beta) a + \beta p_{\beta}(M\cdot a) 
-$$
-Dove $p_{\beta}(a)$ è il PageRank con parametro di teletrasporto $\beta$ e vettore di teletrasporto $a$, mentre $p_{\beta}(M\cdot a)$ è il PageRank con parametro di teletrasporto $\beta$ e vettore di teletrasporto $M \cdot a$. 
+Il pagerank approssimato calcola il personalized pagerank in un tempo pari a $\left(\frac{1}{\epsilon(1-\beta)}\right)$, mentre la power iteration richiederebbe un tempo pari a $\left( \frac{\log n}{\epsilon (1 - \beta)} \right)$. Si può dimostrare che se esiste un taglio con conduttanda $\phi$ e volume $k$, allora il metodo trova un taglio di conduttanda $O\left(\sqrt{\frac{\phi}{\log k}}\right)$. 
 
-* $M$ è una matrice stocastica del PageRank
-* $M \cdot a$ è uno step del random walk
 
-Con probabilità $(1-\beta)$ si esegue una random walk di lunghezza 0, mentre con probabilità $\beta$ si fa un passo.
 
-> Circa 1:20:00
+### 7.5 Motif-Based Clustering
+

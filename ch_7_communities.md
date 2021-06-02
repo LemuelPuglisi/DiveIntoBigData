@@ -665,7 +665,8 @@ La curva di Sweep può essere calcolata in tempo lineare:
 Ipotizziamo di effettuare un pagerank con teletrasporto a partire dal nodo $u$. Sia $q$ un vettore di residui con tutte le componenti nulle tranne la componente $q_u=1$. Supponiamo di voler approssimare il vettore $p$ che contiene i pagerank score con un vettore $r$ inizialmente posto a 0, ammettendo un errore controllato dalla costante $\epsilon$. Definiamo l'azione di push: 
 
 ```
-    push(u, r, q): 
+ 
+ 	push(u, r, q): 
         r' = r 
         q' = q 
 
@@ -720,4 +721,170 @@ Il pagerank approssimato calcola il personalized pagerank in un tempo pari a $\l
 
 
 ### 7.5 Motif-Based Clustering
+
+Preso in input un grafo $G$, per ogni tipo di motif (sottografo, graphlet) possibile si vanno a contare le occorrenze del sottofrafo in $G$. 
+
+Focalizziamoci su un motif specifico in $G$ e prendiamo $S \subseteq V$. Definiamo: 
+
+* **Motif cut**: quanti motif hanno endpoint sia in $S$ che fuori da $S$ 
+* **Motif volume**: quanti endpoint (stub) dei vari motif cadono in $S$ 
+* **Motif conduttanza**: il rapporto tra il motif cut ed il motif volume $\phi_M = \frac{cut_M(S)}{vol_M(S)}$
+
+Ovvero abbiamo ri-definito le metriche precedenti, utilizzando i motif anziché gli archi. 
+
+Considerato un certo motif $M$, l'algoritmo consiste in un primo passo di **preprocessing**, in cui si calcola la matrice $W^{(M)}$, dove l'elemento $(i,j)$ indica il numero di volte in cui l'arco $(i,j)$ partecipa ad una istanza del motif $M$. 
+
+![image-20210602192823696](ch_7_communities.assets/image-20210602192823696.png)
+
+Dopodiché si calcola un **approximated PageRank** utilizzando la matrice pesata $W^{(M)}$ e si procede con lo **sweep** per andare ad individuare i cluster. 
+
+
+
+
+### 7.6 Louvain - Ottimizzazione della modularità 
+
+L'algoritmo di Louvain è un algoritmo di community detection che tenta di ottimizzare la modularità $Q$ con un approccio greedy e con un running time $O(n\log n)$. Questo algoritmo funziona anche con grafi pesati ed è ampiamente utilizzato per grosse reti. 
+
+
+
+#### 7.6.1 Riformulare la modularità
+
+Considerando il configuration model come modello nullo, dato un grafo $G$ ed un partizionamento $S$, abbiamo definito la modularità come segue: 
+$$
+Q(G,S) = \frac{1}{2m} \sum_{s \in S} \sum_{i \in S} \sum_{j \in S} \left(
+	A_{ij} - \frac{k_ik_j}{2m}
+\right)
+$$
+Essendo che non si considerano mai archi con endpoint su cluster differenti, possiamo andare a riformulare la modularità utilizzando la funzione Delta di Dirac $\delta$. Supponiamo che $c_i$ indichi il cluster a cui il nodo $i$ è associato, allora:  
+$$
+\delta(i,j) = \begin{cases}
+1 \text{ se } c_i = c_j \\
+0 \text{ altrimenti } 
+\end{cases}
+$$
+Quindi riscriviamo la modularità: 
+$$
+Q(G,S) = \frac{1}{2m} \sum_{i,j \in V} \left(
+	A_{ij} - \frac{k_ik_j}{2m} 
+\right) \cdot \delta(i,j)
+$$
+
+
+#### 7.6.2 Idea generale
+
+L'algoritmo si divide in due fasi: 
+
+* La **prima fase** consiste nell'esaminare i cluster a coppie e spostare i nodi da un cluster ad un altro se e solo se si ha un incremento della modularità. 
+* La **seconda fase** aggrega i cluster in supernodi per costruire una nuova rete. 
+
+Si ritorna quindi alla prima fase, fino a che non si ha un supernodo che rappresenti l'intera rete. 
+
+![image-20210602195813165](ch_7_communities.assets/image-20210602195813165.png)
+
+
+
+#### 7.6.3 Prima fase - Partizionamento
+
+All'inizio dell'algoritmo ogni nodo verrà inserito in un cluster distinto. Dopodiché, per ogni nodo $i$ l'algoritmo effettuerà due calcoli: 
+
+* Si calcola la modularità $\Delta Q$ quando si inserisce $i$ nella comunità di un vicino $j$
+* Si sposta $i$ nella comunità del nodo $j$ che da il maggiore guadagno $\Delta Q$. 
+
+La fase 1 finisce quando non ci sono movimenti che possano aumentare il guadagno. L'ouput dell'algoritmo dipende dall'ordine in cui i nodi sono processati. La fase finisce con un massimo locale della modularità. 
+
+
+
+##### Calcolo della modularità su singolo cluster
+
+A cosa corrisponde $\Delta Q$ quando muoviamo il nodo $i$ nella comunità $C$? Supponiamo di voler muovere il nodo $i$ dalla comunità $D$ alla comunità $C$, quindi vogliamo calcolare 
+$$
+\Delta Q (D \to i \to C) = \Delta Q(i \to C) + \Delta Q(D \to i)
+$$
+Dove $\Delta Q(D \to i)$ corrisponde al gain che si ha quando si toglie $i$ da $D$ e si forma una ulteriore comunità formata solamente da $i$, mentre $\Delta Q(i \to C)$ è il gain che si ha spostando $i$ all'interno di $C$. 
+
+![image-20210602204927723](ch_7_communities.assets/image-20210602204927723.png)
+
+Definiamo la modularità $Q(C)$ **per un singolo cluster** $C$ come: 
+$$
+Q(C) = \frac{1}{2m} \sum_{i,j \in C} A_{ij} - \frac{k_ik_j}{2m}
+$$
+Definiamo: 
+$$
+\Sigma_{in} = \sum_{i,j \in C} A_{ij}
+$$
+Ovvero la somma degli archi (o dei pesi degli archi) tra nodi all'interno del cluster $C$. 
+
+Definiamo: 
+$$
+\Sigma_{tot} = \sum_{i \in C} k_i 
+$$
+Ovvero la somma degli archi (o dei pesi degli archi) di ogni nodo nel cluster $C$. 
+
+![image-20210602210119942](ch_7_communities.assets/image-20210602210119942.png)
+
+Riscriviamo $Q(C)$ come segue: 
+$$
+Q(C) = \frac{1}{2m} \sum_{i,j \in C} A_{ij} - \frac{k_ik_j}{2m} = \\
+
+= \sum_{i,j \in C} \frac{A_{ij}}{2m} - \frac{k_ik_j}{4m} = \\
+
+= \frac{ \sum_{i,j \in C} A_{ij}}{2m} - 
+\frac
+{\left( \sum_{i\in C}k_i \right) 
+\left(\sum_{j\in C} k_j \right)}{(2m)^2} = \\
+
+=\frac{\Sigma_{in}}{2m} - \left( \frac{\Sigma_{tot}}{2m} \right)^2
+$$
+Quindi 
+$$
+Q(C)=\frac{\Sigma_{in}}{2m} - \left( \frac{\Sigma_{tot}}{2m} \right)^2
+$$
+
+
+##### Derivare $\Delta Q (i \to C)$
+
+Abbiamo considerato il nodo $i$, distaccato dal cluster $D$, come un cluster a sé stante. Dobbiamo calcolare $\Delta Q (i \to C)$. Prima di tutto, definiamo le quantità: 
+
+* $k_{i, in}$ che equivale alla somma degli archi (o dei pesi degli archi) tra $i$ ed il cluster $C$.
+* $k_i$ che equivale alla somma degli archi (o pesi degli archi) del nodo $i$, ovvero il suo grado. 
+
+![image-20210602211448761](ch_7_communities.assets/image-20210602211448761.png)
+
+Definiamo la modularità $Q_{prima}$ prima del merging di $i$ su $C$: 
+$$
+Q_{prima} = Q(C) + Q(\{i\}) = 
+\left[\frac{\Sigma_{in}}{2m} - \left( \frac{\Sigma_{tot}}{2m} \right)^2\right]
++
+\left[0 + \left(\frac{k_i}{2m}\right)^2\right]
+$$
+ E la modularità $Q_{dopo}$ dopo il merging: 
+$$
+Q_{dopo} = Q(C \cup \{i\}) =  
+\left[\frac{\Sigma_{in} + k_{i,in}}{2m} - \left( \frac{\Sigma_{tot} + k_i}{2m} \right)^2\right]
+$$
+Allora possiamo dire che 
+$$
+\Delta Q (i \to C) = Q_{dopo} - Q_{prima}
+$$
+Con lo stesso principio si calcola $\Delta Q (D \to i)$. 
+
+
+
+#### 7.6.4 Seconda fase - Collasso
+
+Tutte le community ottenute nella prima fase sono contratte in super-nodi, e una nuova rete viene creata di conseguenza: 
+
+* I super-nodi sono connessi se esiste almeno un arco che connette le due community
+* Il peso dell'arco tra due super-nodi è pari alla somma dei pesi degli archi dei nodi che connettono le community
+* I super-nodi hanno dei cappi con peso pari alla somma dei pesi degli archi interni. 
+
+Dopodiché viene ripetuta la prima fase utilizzando la nuova rete. 
+
+![image-20210602213318495](ch_7_communities.assets/image-20210602213318495.png)
+
+
+
+### 7.7 Trawling - Analisi di grandi grafi
+
+> 49:35 
 

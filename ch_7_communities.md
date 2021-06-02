@@ -586,7 +586,7 @@ Nella pratica, lo spectral clustering consiste in tre fasi:
 * la **decomposizione**, dove si identificano le autocoppie di $L$. 
 * Il **grouping** dove si mappano i nodi nei due gruppi in base alle componenti dell'autovettore corrispettivo all'autovalore $\lambda_2$ (es. valori negativi in $A$ e valori positivi in $B$). 
 
-![image-20210602094326726](C:\Users\Charlemagne\AppData\Roaming\Typora\typora-user-images\image-20210602094326726.png)
+![image-20210602094326726](./ch_7_communities.assets\win_2)
 
 
 
@@ -644,7 +644,7 @@ Dopodiché si procede con lo sweep:
 
 Dato che un buon cluster ha una bassa conduttanza, possiamo considerare come buon cluster il cluster che restituisca un minimo locale di $\phi(A_i)$.  
 
-![image-20210602111729481](C:\Users\Charlemagne\AppData\Roaming\Typora\typora-user-images\image-20210602111729481.png)
+![image-20210602111729481](./ch_7_communities.assets/win_1)
 
 
 

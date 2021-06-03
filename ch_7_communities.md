@@ -886,5 +886,29 @@ Dopodiché viene ripetuta la prima fase utilizzando la nuova rete.
 
 ### 7.7 Trawling - Analisi di grandi grafi
 
-> 49:35 
+L'algoritmo Trawling permette di identificare delle piccole comunità all'interno del web. Utilizzando questo algoritmo, è possibile identificare i topic comuni tra le pagine web: pagine che parlano dello stesso topic sono collegate tra loro con alta probabilità. 
+
+
+
+#### 7.7.1 Idea 
+
+Supponiamo di disporre in due layer differenti (1, 2) gli stessi nodi di un grafo $G$. Colleghiamo il nodo $u$ dal layer 1 con tutti i suoi vicini nel grafo $G$ sul layer 2. Due nodi $u$ e $v$ che stanno all'interno della stessa comunità, molto probabilmente avranno tanti vicini in comune. 
+
+![image-20210603085454734](ch_7_communities.assets/image-20210603085454734.png)
+
+#### 7.7.2 Definire il problema 
+
+Si vogliono enumerare i sottografi **completi** bipartiti $K_{s,t}$, dove con $s$ indichiamo il numero di nodi a sinistra (layer 1), dove ognuno di essi si collega agli stessi $t$ nodi sulla destra (layer 2). 
+
+![image-20210603085854346](ch_7_communities.assets/image-20210603085854346.png)
+
+#### 7.7.3 Frequent Itemset Enumeration
+
+Utilizziamo le tecniche del Market Basket Analysis (MBA) per risolvere il problema. Definiamo un universo $U$ di $n$ **item**. Definiamo i **basket** come $m$ sottoinsiemi di $U$, $S_1, \dots, S_m \subseteq U$. Definiamo il **supporto** $f$ come un threshold di frequenza. Vogliamo trovare tutti i sottinsiemi $T$ tale che $T \subseteq S_i$ in almeno $f$ insiemi $S_i$, ovvero gli item in $T$ sono stati "acquistati" insieme almeno $f$ volte. 
+
+Colleghiamo il task del MBI al grafo bipartito: se il nodo $i$ ha come vicini i nodi $\{a,b,c\}$, allora definiamo il basket $S_i = \{a,b,c\}$. Il nostro $K_{s,t}$ sarà un insieme $Y$ di cardinalità $t$ che si presenta in $s$ insiemi $S_i$ (ovvero avremo $s$ nodi con gli stessi $t$ vicini). Cercare $K_{s,t}$ vuol dire cercare un insieme con una frequenza minima $s$ e di cardinalità $t$. Definito il problema, basta utilizzare uno tra gli algoritmi di MBI per trovare gli itemset frequenti. 
+
+![image-20210603092946992](ch_7_communities.assets/image-20210603092946992.png)
+
+> Le comunità risultati si sovrappongono: un nodo potrebbe stare in più comunità contemporaneamente (overlapping). 
 

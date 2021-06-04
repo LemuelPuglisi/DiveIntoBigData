@@ -297,9 +297,75 @@ Se il FP-tree non entra in memoria, è necessario adottare delle tecniche per re
 
 > Se gli item sono $\{A,B,C\}$ e l'item su cui proiettare il database è $A$, allora la proiezione è fatta come segue: si considerano gli item con cui è possibile estendere $A$, e si scrive $E(A) = \{B, C\}$. Dopodiché si effettua l'intersezione tra ogni carrello nel database e l'insieme $E(A)$. Il database risultante ha una dimensione minore. 
 
-Le proiezioni possono essere fatte su tutto il database (**parallel projection**) o sulla singola partizione (**partition projection**), quest'ultima richiede un partizionamento prima ancora della proiezione sulla base dell'ordinamento degli item frequenti. 
-
- 
+Le proiezioni possono essere fatte su tutto il database (**parallel projection**) per ogni item frequente oppure si può partizionare il database in base alle proiezioni (**partition projection**), il che risulta non essere ridondante ([link al paper](https://link.springer.com/content/pdf/10.1023/B:DAMI.0000005258.31418.83.pdf)). 
 
 
+
+### 2.8 Multiple Minimum Support
+
+Molti dataset reali hanno una distribuzione ripida del supporto dei propri item. Se il supporto minimo è troppo alto potremmo perdere alcuni itemset che includono item rari, mentre se è troppo basso il costo computazionale risulta troppo alto. Una idea è quella di applicare diversi supporti minimi in base all'item (o alla categoria), da questa idea prende il nome di **multiple minimum support**. 
+
+
+
+#### 2.8.1 Perdita dell'anti-monotonicità
+
+Esempio, sia $MS(i)$ il supporto minimo per l'item $i$: 
+
+* $MS(Milk) = 5\%$
+* $MS(Coke)=3\%$
+* $MS(Broccoli)=0.1\%$
+* $MS(Salmon)=0.5\%$
+
+Ipotizziamo di star analizzando il supporto dell'itemset $\{Milk, Broccoli\}$, quale supporto minimo dovremmo utilizzare? La risposta è il supporto minimo **più piccolo**. Quindi: 
+$$
+MS(\{Milk, Broccoli\}) = \min(MS(Milk), MS(Broccoli)) = 0.1\%
+$$
+**Problema**: il supporto non è più [anti-monotono](https://link.springer.com/referenceworkentry/10.1007%2F978-0-387-39940-9_5046)! Supponiamo che:  
+
+* $Support(Milk, Coke) = 1.5\%$ 
+  * in questo caso il supporto minimo più basso è quello di $Coke$, ovvero $3\%$, quindi l'itemset non è frequente. 
+* $Support(Milk, Coke, Broccoli)=0.5\%$ 
+  * il supporto minimo più piccolo è quello di $Broccoli$, ovvero $0.1\%$, quindi l'itemset è frequente, tuttavia **contiene un itemset non frequente** al suo interno. 
+
+
+
+#### 2.8.2 Soluzione - MS Apriori
+
+Si ordinano in **maniera crescente** gli item in base al loro supporto minimo, basandoci sull'esempio precedente avremo: 
+$$
+\langle Broccoli, Salmon, Coke, Milk \rangle
+$$
+Sarà necessario modificare l'algoritmo Apriori come segue: 
+
+* $L_1$ sarà l'insieme degli item frequenti
+  * Ogni item è filtrato in base al proprio supporto minimo
+  * Per $L_k$ si prenderà il supporto minimo più piccolo nell'itemset
+* $F_1$ sarà l'insieme di item il cui supporto è $\ge MS(1)$ (supporto minimo più basso)
+  * Se un item non supera il supporto minimo più piccolo allora di sicuro non supererà gli altri supporti. 
+  * $F_1$ potrebbe (spesso lo è) più grande di $L_1$ 
+* $C_2$ è il set di coppie candidate generate da $F_1$ anziché $L_1$. 
+
+
+
+##### Procedura
+
+* $M = sort(I, MS)$ // ordiniamo gli item $I$ in base ai loro supporti minimi $MS$. 
+* $L = initpass(M, T)$ // conteggiamo gli item nel database transazionale $T$ 
+* $F_1 = \{ f \in L : support(f) \ge MS(f) \}$ // candidati che superano il proprio supporto
+* Sia $k=2$ sinché $F_{k-1} \ne \empty$ incrementare $k=k+1$ e ripetere:
+  * Se $k=2$ allora: 
+    * I candidati $C_2$ saranno generati da $L$
+  * Altrimenti
+    * I candidati $C_k$ saranno generati da $F_{k-1}$
+  * Per ogni transazione $t \in T$ eseguire:
+    * Per ogni candidato $c \in C_k$ eseguire:
+      * Se $c \subseteq t$ allora $support(c) = support(c)+1$
+  * $L_k = \{c \in C_k : support(c) \ge MS(c[1]) \}$ // $MS(c[1])$ è il supporto minimo più basso
+* ritorna $\bigcup_{k} L_k$
+
+
+
+### 2.9 Rule generation
+
+> Lezione 6 a 1:02:05
 

@@ -367,5 +367,86 @@ Sarà necessario modificare l'algoritmo Apriori come segue:
 
 ### 2.9 Rule generation
 
-> Lezione 6 a 1:02:05
+Dopo aver trovato gli itemset frequenti, è necessario generare delle regole. Una regola di associazione è una regola del tipo $A\to B$, e si interpreta come: "Se il carrello contiene $A$, conterrà anche $B$". Definiamo la confidenza della regola $A \to B$ come segue: 
+$$
+c(A \to B) = \frac{support(AB)}{support(A)}
+$$
+Sia $L$ un itemset frequente, si trovino tutti i sottoinsiemi propri $F \sub L$ tali che la confidenza della regola $F \to (L\setminus F)$ superi la soglia di confidenza minima. Se $|L| = k$ allora vi saranno $2^k-2$ candidati (conteggiamo i membri del powerset escludendo l'insieme vuoto $\empty$ e l'insieme $L$ stesso). 
+
+
+
+#### 2.9.1 Generazione efficiente di regole
+
+In generale, la confidenza non è anti-monotona, quindi $c(ABC \to D)$ può essere maggiore o minore di $c(AB \to D)$. Tuttavia, osserviamo un fatto: consideriamo la regola $ABC \to D$ e calcoliamo la confidenza: 
+$$
+c(ABC \to D) = \frac{support(ABCD)}{support(ABC)}
+$$
+Ora spostiamo la $C$ al membro di destra: 
+$$
+c(AB \to CD) = \frac{support(ABCD)}{support(AB)}
+$$
+Dalla anti-monotonia del supporto possiamo asserire che:
+$$
+support(AB) \ge support(ABC) \Longrightarrow 
+\frac{1}{support(AB)} \le \frac{1}{support(ABC)} \Longrightarrow \\
+\Longrightarrow \frac{support(ABCD)}{support(AB)} \le \frac{support(ABCD)}{support(ABC)} \Longrightarrow c(AB \to CD) \le c(ABC \to D) 
+$$
+Da cui proviene il **teorema**: 
+
+> Se una regola $X \to (Y \setminus X)$ non soddisfa la soglia minima di **confidenza**, allora qualsiasi regola $X' \to (Y \setminus X')$, dove $X' \subseteq X$, non soddisferà la soglia minima di confidenza.  
+
+È quindi possibile effettuare pruning nel lattice delle regole di associazione: se $ABC \to D$ non supera la soglia di confidenza minima, allora le regole $AB \to CD$, $AC \to BD$, $A \to BCD$ (etc.) non soddisferanno la soglia minima di confidenza. 
+
+
+
+#### 2.9.2 Pattern evaluation
+
+Esistono molte metriche per validare la valenza di una regola di associazione. Possono essere utilizzate per effettuare un pruning nel post-processing, o in altri casi, un pruning online. 
+
+
+
+##### Tavola di contingenza
+
+La tavola di contingenza è una tabella da cui vengono calcolate varie metrice. È definita come segue: 
+
+![image-20210605103153083](ch_2_advanced_mbi.assets/image-20210605103153083.png)
+
+
+
+##### Drawback of confidence 
+
+Analizziamo la seguente tabella di contingenza: 
+
+![image-20210605103419223](ch_2_advanced_mbi.assets/image-20210605103419223.png)
+
+Analizziamo la regola $\text{Tea} \to \text{Coffee}$. La confidenza è pari a: 
+$$
+c(\text{Tea} \to \text{Coffee}) = \frac{15}{20} = 0.75
+$$
+Possiamo codificare il fatto in termini di probabilità condizionata, quindi scriveremo che la probabilità $P(\text{Coffee}\mid \text{Tea}) = 0.75$. Osserviamo due fatti: 
+
+* $P(\text{Coffee}) = \frac{90}{100} = 0.90$
+* $P(\text{Coffee}\mid \bar{\text{Tea}}) = \frac{75}{80} \approx 0.94$
+
+Quindi la probabilità che, non comprando il Te, si compri il caffè è ancora più alta della regola studiata in precedenza, per cui possiamo concludere che: pur avendo una buona confidenza, la regola $\text{Tea} \to \text{Coffee}$ risulta ambigua e poco interessante.
+
+
+
+##### Ulteriori metriche
+
+* Lift, definito come $\frac{P(Y \mid X)}{P(Y)}$
+* Intereset, definito come $\frac{P(X,Y)}{P(X)P(Y)}$
+* PS (Piatetsky-Shapiro's), definito come $P(X,Y) - P(X)P(Y)$
+* $\phi$-coefficient, definito come $\frac{P(X,Y) - P(X)P(Y)}{\sqrt{P(X)[1-P(X)][1-P(Y)]}}$
+
+E molte altre. 
+
+|      |      |      |
+| ---- | ---- | :--- |
+|      |      |      |
+|      |      |      |
+|      |      |      |
+|      |      |      |
+
+
 

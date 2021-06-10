@@ -77,7 +77,7 @@ I vettori della base sono gli assi di rappresentazione dei dati, per cui possiam
 
 #### 3.1.5 Idea principale
 
-L'obiettivo della dimensionality reduction è proprio quello di identificare gil assi dei dati. Molto spesso i dati non giacciono esattamente su una dimensione minore, per cui è necessario ammettere un *margine di errore*.  Dato un insieme di punti in uno spazio $d$-dimensionale, l'idea principale è quella di proiettare i dati in uno spazio con meno dimensioni preservando quanta più informazione possibile. Scegliamo la proiezione che minimizza il *quadrato dell'errore* quando ricostruiamo i dati originali. 
+L'obiettivo della dimensionality reduction è proprio quello di identificare gli assi dei dati. Molto spesso i dati non giacciono esattamente su una dimensione minore, per cui è necessario ammettere un *margine di errore*.  Dato un insieme di punti in uno spazio $d$-dimensionale, l'idea principale è quella di proiettare i dati in uno spazio con meno dimensioni preservando quanta più informazione possibile. Scegliamo la proiezione che minimizza il *quadrato dell'errore* quando ricostruiamo i dati originali. 
 
 
 
@@ -413,7 +413,7 @@ I punti mantengono le proporzioni dopo la rotazione, vediamolo graficamente:
 
 $ME$ corrisponde ai punti di $M$ trasformati in uno spazio di nuove coordinate. In questo spazio, il **primo asse** (quello che corrisponde al più grande autovalore) è il più significativo; formalmente, la varianza di un punto lungo questo asse è la più grande. Il **secondo asse** corrisponde al secondo autovalore, è il successivo secondo autovalore più significativo nello stesso senso. Questo pattern si presenta per ogni autocoppia. Per trasformare $M$ in uno spazio con meno dimensioni, basta preservare le dimensioni che usano gli autovettori associati ai più alti autovalori e cancellare gli altri. Sia $E_k$ la matrice formata dalle prime $k$ colonne di $E$. Allora $ME_k$ è una rappresentazione di $M$ a $k$ dimensioni. 
 
-Nel nostro esempio, rimuoviamo il secondo autovettore $e_2$ dalla matrice $E$ e ricalcoliamo il prodotto $EM$: 
+Nel nostro esempio, rimuoviamo il secondo autovettore $e_2$ dalla matrice $E$ e ricalcoliamo il prodotto $ME$: 
 $$
 ME_1 = \begin{bmatrix}
 1 & 2 \\
@@ -772,7 +772,7 @@ La matrice $U$ viene costruita mediante il seguente processo:
 
 > **Perché la pseudoinversa funziona?**
 >
-> Supponiamo che $W = XYZ$, allora deve verificarsi che $W^{-1} = X^{-1}Y^{-1}Z^{-1}$. Dato che scomponiamo $W$ con la singular value decomposition, allora $X$ e $X$ saranno ortonormali, per cui $X^{-1} = X^T$ e $Z^{-1} = X^T$. Poiché la matrice $Y$ è diagonale, allora $Z^{-1} = \frac{1}{Z}$, dove gli elementi in $Z$ nulli vengono però mantenuti nulli (altrimenti si avrebbe una divisione per zero). Se $W$ è non singolare (determinante diverso da zero, di conseguenza esiste l'inversa $W^{-1}$)  allora la pseudo-inversa coincide con la vera inversa. 
+> Scomponiamo la matrice $M$ utilizzano la SVD $M = XZY$, allora deve accadere che $M^{-1} = Y^{-1}Z^{-1}X^{-1}$. Essendo $X$ ed $Y$ ortonormali, la loro trasposta corrisponderà all'inversa. Quindi scriviamo $M^{-1}= Y^TZ^{-1}X^T$. Poiché la matrice $Z$ è diagonale, allora $Z^{-1} = \frac{1}{Z}$, dove gli elementi in $Z$ nulli vengono però mantenuti nulli (altrimenti si avrebbe una divisione per zero). Se $M$ è non singolare (determinante diverso da zero, di conseguenza esiste l'inversa $M^{-1}$)  allora la pseudo-inversa coincide con la vera inversa. 
 
 
 
@@ -973,11 +973,11 @@ w_{ia} = w_{ia} \sum_{\mu} \frac{a_{i\mu}}{\hat{a}_{i\mu}} h_{a\mu}
 $$
 Dopodiché normalizziamo il risultato: 
 $$
-w_{ia} = \frac{w_{ia}}{\sum_{j} h_{ja}}
+w_{ia} = \frac{w_{ia}}{\sum_{j} h_{aj}}
 $$
 Allo stesso modo calcoliamo la matrice $H$
 $$
-h_{a\mu} = h_{a\mu} \sum_{i} w_{ia} \frac{a_{i\mu}}{\hat{a}_{i\mu}} 
+h_{a\mu} = h_{a\mu} \sum_{i} w_{ia} \frac{a_{i\mu}}{\hat{a}_{i\mu}}
 $$
 Dopodiché normalizziamo il risultato:
 $$

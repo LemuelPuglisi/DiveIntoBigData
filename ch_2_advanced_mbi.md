@@ -26,7 +26,7 @@ $$
 						&  & (i_7, i_9) &  & \\
 \end{bmatrix}
 $$
-Notiamo che, se il soglia del supporto $minsup = 2$, allora sicuramente le coppie di item che finiranno in bucket con un conteggio minore di 2 non sarà frequente. Tuttavia, la tabella hash è pesante da mantenere in memoria, quindi scremiamo la struttura creando un array di bit di lunghezza $k$ (uno per ogni bucket), un cui asseriamo solo i bit il cui corrispondente bucket ha un conteggio maggiore o uguale a $minsup$. 
+Notiamo che, se $minsup = 2$, allora sicuramente le coppie di item che finiranno in bucket con un conteggio minore di 2 non saranno frequenti. Tuttavia, la tabella hash è pesante da mantenere in memoria, quindi scremiamo la struttura creando un array di bit di lunghezza $k$ (uno per ogni bucket), in cui asseriamo solo i bit il cui corrispondente bucket ha un conteggio maggiore o uguale a $minsup$. 
 $$
 [1,1,0,0]
 $$
@@ -167,7 +167,7 @@ Osserviamo il seguente lattice:
 
 La frontiera rossa separa gli insiemi frequenti (colore bianco) dagli insiemi non frequenti (colore grigio). Gli insiemi colorati in azzurro sono insiemi frequenti massimali. Un insieme frequente si dice **massimale** quando ogni suo superinsieme (insieme che lo contiene) non è frequente. 
 
-Conservando solo gli insiemi massimali trasportiamo una importante informazione: l'insieme delle parti (power set) di un insieme frequente massimale è formato da soli insiemi frequenti. Ovviamente, mantenendo solo gli insiemi frequenti massimali, si perde il supporto dei sottoinsiemi frequenti, che potrebbe essere maggiore. Di conseguenza, mantenere solo gli insiemi frequenti massiamli equivale ad una compressione con perdita (**lossy**). 
+Conservando solo gli insiemi massimali trasportiamo una importante informazione: l'insieme delle parti (power set) di un insieme frequente massimale è formato da soli insiemi frequenti. Ovviamente, mantenendo solo gli insiemi frequenti massimali, si perde il supporto dei sottoinsiemi frequenti, che potrebbe essere maggiore. Di conseguenza, mantenere solo gli insiemi frequenti massiamali equivale ad una compressione con perdita (**lossy**). 
 
 
 
@@ -259,7 +259,7 @@ P = \{
 (B:1, C:1, E_:1 )
 \}
 $$
-Il conteggio di $E$ è 3, per cui se supponiamo che $minsup = 2$, allora diciamo che $\{E\}$ è in itemset frequente. Consideriamo l'albero condizionale di $E$ ed applichiamo ricorsivamente la stessa procedura con $D$: 
+Il conteggio di $E$ è 3, per cui se supponiamo che $minsup = 2$, allora diciamo che $\{E\}$ è un itemset frequente. Consideriamo l'albero condizionale di $E$ ed applichiamo ricorsivamente la stessa procedura con $D$: 
 
 ![image-20210604151155216](ch_2_advanced_mbi.assets/image-20210604151155216.png)
 
@@ -349,19 +349,22 @@ Sarà necessario modificare l'algoritmo Apriori come segue:
 
 ##### Procedura
 
-* $M = sort(I, MS)$ // ordiniamo gli item $I$ in base ai loro supporti minimi $MS$. 
-* $L = initpass(M, T)$ // conteggiamo gli item nel database transazionale $T$ 
-* $F_1 = \{ f \in L : support(f) \ge MS(f) \}$ // candidati che superano il proprio supporto
-* Sia $k=2$ sinché $F_{k-1} \ne \empty$ incrementare $k=k+1$ e ripetere:
-  * Se $k=2$ allora: 
-    * I candidati $C_2$ saranno generati da $L$
-  * Altrimenti
-    * I candidati $C_k$ saranno generati da $F_{k-1}$
-  * Per ogni transazione $t \in T$ eseguire:
-    * Per ogni candidato $c \in C_k$ eseguire:
-      * Se $c \subseteq t$ allora $support(c) = support(c)+1$
-  * $L_k = \{c \in C_k : support(c) \ge MS(c[1]) \}$ // $MS(c[1])$ è il supporto minimo più basso
-* ritorna $\bigcup_{k} L_k$
+Ordiniamo gli item in $I$ in maniera crescente sulla base del supporto minimo $MS$. 
+
+* $M = sort(I, MS)$
+* $F = \{ i \mid i \in I, supp(i) \ge MS(M[1]) \}$
+* $L = \{i \mid i \in F, supp(i) \ge MS(i) \}$
+* for ($k=2$, $L_{k-1} \ne \empty$, $k++$) do:
+  * Se $k = 2$ allora $C_k = cgen(F)$
+  * Altrimenti $C_k = cgen(L_{k-1})$
+  * per ogni transazione $t$ nel database $T$
+    * per ogni candidato $c$ in $C_{k}$
+      * $c = sort(c)$
+      * $supp(c) = supp(c) + count(c, t)$
+  * $L_k = \{c \mid c \in C_k, supp(c) \ge MS(c[1])\}$
+* return $\bigcup_{k} L_k$
+
+Notiamo che, dato che $c$ viene ordinato con $sort$, allora $MS(c[1])$ indica il supporto minimo più basso nell'itemset $c$. 
 
 
 
@@ -389,7 +392,7 @@ Dalla anti-monotonia del supporto possiamo asserire che:
 $$
 support(AB) \ge support(ABC) \Longrightarrow 
 \frac{1}{support(AB)} \le \frac{1}{support(ABC)} \Longrightarrow \\
-\Longrightarrow \frac{support(ABCD)}{support(AB)} \le \frac{support(ABCD)}{support(ABC)} \Longrightarrow c(AB \to CD) \le c(ABC \to D) 
+\Longrightarrow \frac{support(ABCD)}{support(AB)} \le \frac{support(ABCD)}{support(ABC)} \Longrightarrow c(AB \to CD) \le c(ABC \to D)
 $$
 Da cui proviene il **teorema**: 
 

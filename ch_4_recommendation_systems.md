@@ -18,7 +18,7 @@ Il LSI è una tecnica sviluppata nei primi anni '90 che risolve il problema dell
 * Le categorie degli item prenderanno il posto dei concetti
 * Il mapping $\text{termini} \to \text{concetti}$, $\text{documenti} \to \text{concetti}$ diviene $\text{item} \to \text{categorie}$, $\text{utenti} \to \text{categorie}$
 
-Quindi si calcola la SVD della matrice $U$: 
+Quindi si calcola la SVD della matrice $M$: 
 $$
 M = U\Lambda V^T
 $$
@@ -76,24 +76,26 @@ a_{ij} = \begin{cases}
 0 \text{ altrimenti }
 \end{cases}
 $$
-Si esegue un processo di trasferimento delle risorse (*resource transfer*) tra i due insiemi della rete: all'inizio vengono trasferite delle risorse dall'insieme $O$ all'insieme $U$ e, successivamente, le risorse tornano da $U$ ad $O$. La risorsa contenuta in un nodo viene trasferita equamente ai nodi adiacenti nell'altro insieme. Il processo a due fasi si ripete sino a convergenza. Questo metodo ci permette di definire una tecnica per il calcolo della matrice dei pesi $W$ di dimensione $n \times n$ di una **proiezione** di $G$ come segue: 
+Si esegue un processo di trasferimento delle risorse (*resource transfer*) tra i due insiemi della rete: all'inizio vengono trasferite delle risorse dall'insieme $O$ all'insieme $U$ e, successivamente, le risorse tornano da $U$ ad $O$. La risorsa contenuta in un nodo viene trasferita equamente ai nodi adiacenti nell'altro insieme. Il processo a due fasi si ripete sino a convergenza. Questo metodo ci permette di definire una tecnica per il calcolo della matrice dei pesi $W$ di dimensione $n \times n$ di una **proiezione** di $G$ rispetto all'insieme $U$ come segue: 
 $$
-w_{ij} = \frac{1}{\Gamma(i,j)} \sum_{l=1}^{n} \frac{a_{il}a_{jl}}{k(u_i)}
+w_{ij} = \frac{1}{\Gamma(i,j)} \sum_{l=1}^{m} \frac{a_{il}a_{jl}}{k(u_l)}
 $$
-Dove con $k(u_i)$ indichiamo il grado di $u_i$ (quanti oggetti ha valutato l'utente $u_i$), e la funzione $\Gamma$ è arbitraria e definisce il metodo graph-based utilizzato: 
+Quindi iteriamo per tutti gli $m$ item in $O$ e, se l'item è in comune tra i due utenti $i$ e $j$, allora $w_{ij}$ acquisisce valore inversamente proporzionale al grado $k(u_l)$ dell'oggetto. La funzione $\Gamma$ è arbitraria e definisce il metodo graph-based utilizzato: 
 $$
 \Gamma(i,j) = \begin{cases}
 k(o_j) \text{ per il metodo NBI } \\ 
 k(o_i) \text{ per il metodo HeatS }
 \end{cases}
 $$
-Per ottenere le predizioni delle valutazioni, ovvero la matrice di raccomandazione $R$, è sufficiente computare il prodotto riga-colonna tra la matrice $W$ dei pesi della proiezione del grafo bipartito, che ha una dimensione $n \times n$, per la matrice $A$ di adiacenza del grafo bipartito $G$, che ha una dimensione $n \times m$ 
+Per ottenere le predizioni delle valutazioni, ovvero la matrice di raccomandazione $R$, è sufficiente computare il prodotto riga-colonna tra la matrice $W$ dei pesi della proiezione del grafo bipartito (sugli utenti), che ha una dimensione $n \times n$, per la matrice $A$ di adiacenza del grafo bipartito $G$, che ha una dimensione $n \times m$ 
 $$
 R = W \cdot A
 $$
 Il peso $w_{ij}$ della proiezione corrisponde a quante risorse vengono trasferite dall'oggetto $j$ all'oggetto $i$, o quanto piacerà l'oggetto $j$ ad un utente a cui piace l'oggetto $i$. 
 
 > Il NBI funziona su tutti i tipi di oggetti e risolve il problema della sparsità della utility matrix. Tuttavia persistono i problemi con i nuovi utenti o i nuovi item ed il metodo richiede importanti risorse computazionali. 
+
+[Paper di riferimento](https://academic.oup.com/bioinformatics/article/29/16/2004/199066?login=true).
 
 
 

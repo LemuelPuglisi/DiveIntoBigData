@@ -250,7 +250,7 @@ L'algoritmo di discesa del gradiente *stocastico* (*Stochastic Gradient Descent*
 
 $$
 \text{per } i = 1, \dots, m \text{ eseguire: } \\
-\theta_j = \theta_j - \alpha \frac{1}{m} \left( h_{\theta}(x^{(i)}) - y^{(i)} \right) x^{(i)}_j \text{ per } j = 1 \dots n
+\theta_j = \theta_j - \alpha \left( h_{\theta}(x^{(i)}) - y^{(i)} \right) x^{(i)}_j \text{ per } j = 1 \dots n
 $$
 
 Osserviamo che all'interno dello step di aggiornamento vi è la derivata parziale della funzione costo anziché della funzione obiettivo: questo implica che, ad ogni step, i pesi vengono aggiornati basandosi su una singola osservazione del training set e non su tutti i dati. 

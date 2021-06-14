@@ -476,7 +476,7 @@ $$
 $$
 Dato che per $D$ è una matrice diagonale, allora tutti i valori al di fuori della diagonale varranno 0. Inoltre la matrice di adiacenza ha valori diversi da 0 solo se esiste un arco tra i due nodi, quindi riscriviamo l'espressione come segue: 
 $$
-\sum_{i=1}^n D_{ij}x_i^2 - 
+\sum_{i=1}^n D_{ii}x_i^2 - 
 \sum_{(i,j) \in E}  2x_i x_j
 $$
 Essendo un grafo non direzionato considereremo al secondo membro lo stesso arco 2 volte. Osserviamo che, per ogni arco presente nel grafo, saranno presenti $x_i^2$ ed $x_j^2$ dal primo membro, e $2x_ix_j$ al secondo membro. Questo sembra essere proprio un quadrato di binomio, quindi riscriviamo: 
@@ -576,9 +576,50 @@ Per transitività abbiamo che $\lambda_2 \le 2 \alpha$.
 
 > Un lower bound per $\lambda_2$ (dato per buono) è che $\lambda_2 \ge \frac{\alpha^2}{2k_{max}}$, dove $k_{max}$ è il grado massimo nel grafo. 
 
+#### 7.3.7 Spiegazione semplice
+
+Sia $G$ un grafo non direzionato e non pesato con $n$ nodi, sia $A$ la sua matrice di adiacenza. Essendo un grafo indiretto, $A$ sarà simmetrica. Definiamo $A$:
+$$
+A_{ij} = \begin{cases}
+1 \text{ se } (i,j) \in E \\
+0 \text{ altrimenti}
+\end{cases}
+$$
+Sia $D$ la matrice dei gradi di $G$, ovvero una matrice diagonale definita come segue: 
+$$
+D_{ij} = \begin{cases}
+k_i \text{ se } i =j \\
+0 \text{ altrimenti}
+\end{cases}
+$$
+Definiamo adesso la matrice laplaciana $L$ del grafo $G$ dalla differenza $L=D-A$, ovvero:
+$$
+L_{ij} = \begin{cases}
+k_i \text{ se } i = j \\
+- 1 \text{ se } (i,j) \in E \\
+0 \text{ altrimenti}
+\end{cases}
+$$
+La matrice laplaciana è semidefinita positiva ed ha valori reali non negativi. Siano $\{\lambda_1, \lambda_2, \dots, \lambda_n\}$ gli autovalori di $L$, ordinati in maniera crescente $\lambda \le \lambda_2 \le \dots \le \lambda_n$, e siano $x_1,x_2, \dots, x_n$ i rispettivi autovettori. Gli autovalori rivelano proprietà del grafo non osservabili dalla matrice di adiacenza:
+
+* (a) Se $\lambda_1 = \lambda_2 = \dots, \lambda_k = 0$, allora il grafo ha $k$ componenti connesse. 
+* (b) Se il grafo è connesso, allora $\lambda_2 > 0$ ed è chiamato autovalore di Fiedler. 
+* (c) $\lambda_1 = 0$ e $x_1 = (1, \dots, 1)$ perché la somma delle righe di $L$ risulta 0.  
+
+Più alto è l'autovalore di Fiedler, più il grafo è densamente connesso. Nella pratica si prende l'autovettore $x_2$ corrispondente all'autovalore di Fiedler, chiamato vettore di Fiedler e si effettua un bipartizionamento come segue: 
+$$
+A = \{ u \mid x_2(u) \ge 0 \} \\
+B = \{ v \mid x_2(v) < 0 \}
+$$
+Per l'osservazione $b$, più piccolo è $\lambda_2$, migliore è il bipartizionamento. Sia $f$ la funzione definita come segue:
+$$
+f(x) = \frac{x^TLx}{x^Tx} = \sum_{(i,j) \in E} (x_i - x_j)^2
+$$
+Per il teorema di Rayleigh sappiamo che $\lambda_2 = \min_x f(x)$ e $x_2 = \text{arg}\min_x f(x)$. Inoltre, sia $\alpha$ l'espansone del grafo $G$, si può dimostrare che $\lambda_2 \le 2\alpha$.  
 
 
-#### 7.3.7 Procedura
+
+#### 7.3.8 Procedura
 
 Nella pratica, lo spectral clustering consiste in tre fasi: 
 
@@ -628,7 +669,7 @@ Dove ovviamente $vol(V) = 2m$ e quindi $vol(V \setminus S) = 2m - Vol(S)$, ed $m
 
 #### 7.4.3 Algoritmo
 
-L'algoritmo nei seguenti passi: 
+L'algoritmo è descritto nei seguenti passi: 
 
 * Scegliere un nodo $s$ di interesse
 * Eseguire il Personalized-PageRank (PPR) con teleport $\{s\}$
@@ -677,9 +718,10 @@ Ipotizziamo di effettuare un pagerank con teletrasporto a partire dal nodo $u$. 
         # di questo ne teniamo solo la metà
         q'(u) = (q(u) * beta) * 0.5
 
-        # cediamo l'altra metà al rank dei vicini di u 
-        for v : (v,u) in E: 
-            q'(v) = q(v) + 0.5*(beta * q(u))
+        # cediamo l'altra metà al rank dei vicini N(u) di u 
+        for v : (v,u) in E:
+        	residuo_rimanente = 0.5 * ( beta * q(u) ) / 
+            q'(v) = q(v) + ( residuo_rimanente / |N(u)| )  
 
         # ritorniamo i vettori aggiornati
         return r', q'
@@ -702,7 +744,7 @@ allora il residuo è alto. Quando non si verifica più tale condizione per il no
 		r = [0, ..., 0]
 		q = [0, ..., 1, ..., 0] # asserire il nodo di partenza
 		
-		while (esiste un nodo u per cui si verifica la condizione (47)): 
+		while (esiste u : ( q(u) / d(u) >= eps ) : 
 			r, q = push(u, r, q)
 		
 		return r, q
@@ -826,7 +868,7 @@ Riscriviamo $Q(C)$ come segue:
 $$
 Q(C) = \frac{1}{2m} \sum_{i,j \in C} A_{ij} - \frac{k_ik_j}{2m} = \\
 
-= \sum_{i,j \in C} \frac{A_{ij}}{2m} - \frac{k_ik_j}{4m} = \\
+= \sum_{i,j \in C} \frac{A_{ij}}{2m} - \frac{k_ik_j}{(2m)^2} = \\
 
 = \frac{ \sum_{i,j \in C} A_{ij}}{2m} - 
 \frac

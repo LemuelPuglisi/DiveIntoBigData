@@ -582,7 +582,7 @@ P(g(S_1) \cong g(S_2) ) = = 1-(1-s^k)^{L} = 1-(1-0.8^5)^{20} = 0.999
 $$
 Quindi $S_1$ è simile ad $S_2$ con probabilità del $99.9$%. Osserviamo come si comporta la funzione con coppie dissimili, quindi supponiamo: 
 $$
-sim(S_1, S_2) = 0.83 < t
+sim(S_1, S_2) = 0.3 < t
 $$
 Avremo che 
 $$

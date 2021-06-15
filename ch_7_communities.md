@@ -600,11 +600,11 @@ k_i \text{ se } i = j \\
 0 \text{ altrimenti}
 \end{cases}
 $$
-La matrice laplaciana è semidefinita positiva ed ha valori reali non negativi. Siano $\{\lambda_1, \lambda_2, \dots, \lambda_n\}$ gli autovalori di $L$, ordinati in maniera crescente $\lambda \le \lambda_2 \le \dots \le \lambda_n$, e siano $x_1,x_2, \dots, x_n$ i rispettivi autovettori. Gli autovalori rivelano proprietà del grafo non osservabili dalla matrice di adiacenza:
+La matrice laplaciana è semidefinita positiva ed ha autovalori reali non negativi. Siano $\{\lambda_1, \lambda_2, \dots, \lambda_n\}$ gli autovalori di $L$, ordinati in maniera crescente $\lambda_1 \le \lambda_2 \le \dots \le \lambda_n$, e siano $x_1,x_2, \dots, x_n$ i rispettivi autovettori. Gli autovalori rivelano proprietà del grafo non osservabili dalla matrice di adiacenza:
 
 * (a) Se $\lambda_1 = \lambda_2 = \dots, \lambda_k = 0$, allora il grafo ha $k$ componenti connesse. 
 * (b) Se il grafo è connesso, allora $\lambda_2 > 0$ ed è chiamato autovalore di Fiedler. 
-* (c) $\lambda_1 = 0$ e $x_1 = (1, \dots, 1)$ perché la somma delle righe di $L$ risulta 0.  
+  * (c) $\lambda_1 = 0$ e $x_1 = (1, \dots, 1)$ perché la somma delle righe di $L$ risulta 0.  
 
 Più alto è l'autovalore di Fiedler, più il grafo è densamente connesso. Nella pratica si prende l'autovettore $x_2$ corrispondente all'autovalore di Fiedler, chiamato vettore di Fiedler e si effettua un bipartizionamento come segue: 
 $$
@@ -948,9 +948,8 @@ Si vogliono enumerare i sottografi **completi** bipartiti $K_{s,t}$, dove con $s
 
 Utilizziamo le tecniche del Market Basket Analysis (MBA) per risolvere il problema. Definiamo un universo $U$ di $n$ **item**. Definiamo i **basket** come $m$ sottoinsiemi di $U$, $S_1, \dots, S_m \subseteq U$. Definiamo il **supporto** $f$ come un threshold di frequenza. Vogliamo trovare tutti i sottinsiemi $T$ tale che $T \subseteq S_i$ in almeno $f$ insiemi $S_i$, ovvero gli item in $T$ sono stati "acquistati" insieme almeno $f$ volte. 
 
-Colleghiamo il task del MBI al grafo bipartito: se il nodo $i$ ha come vicini i nodi $\{a,b,c\}$, allora definiamo il basket $S_i = \{a,b,c\}$. Il nostro $K_{s,t}$ sarà un insieme $Y$ di cardinalità $t$ che si presenta in $s$ insiemi $S_i$ (ovvero avremo $s$ nodi con gli stessi $t$ vicini). Cercare $K_{s,t}$ vuol dire cercare un insieme con una frequenza minima $s$ e di cardinalità $t$. Definito il problema, basta utilizzare uno tra gli algoritmi di MBI per trovare gli itemset frequenti. 
+Colleghiamo il task del MBA al grafo bipartito: se il nodo $i$ ha come vicini i nodi $\{a,b,c\}$, allora definiamo il basket $S_i = \{a,b,c\}$. Il nostro $K_{s,t}$ sarà un insieme $Y$ di cardinalità $t$ che si presenta in $s$ insiemi $S_i$ (ovvero avremo $s$ nodi con gli stessi $t$ vicini). Cercare $K_{s,t}$ vuol dire cercare un insieme con una frequenza minima $s$ e di cardinalità $t$. Definito il problema, basta utilizzare uno tra gli algoritmi di MBA per trovare gli itemset frequenti. 
 
 ![image-20210603092946992](ch_7_communities.assets/image-20210603092946992.png)
 
 > Le comunità risultati si sovrappongono: un nodo potrebbe stare in più comunità contemporaneamente (overlapping). 
-

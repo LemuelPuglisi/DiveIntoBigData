@@ -1,6 +1,6 @@
 Market Basket Analysis
 
-* Apriori (**monotonicità**)
+* Apriori (**anti-monotonicità**)
 * PCY, Park-Chen-Yu (**funzioni hash**)
 * Random Sampling (**sampling per entrare in memoria principale**)
 * SON, Savasere-Omiecinski-Navathe (**partizionamento carrelli, alg. distribuito**)
@@ -75,5 +75,5 @@ Comunità
 * Sweep (**conduttanza, approximated PageRank**)
 * Motif-Based Clustering (**Sweep con motif**)
 * Louvain (**greedy, ottimizzare modularità, mod. gain, supernodi**)
-* Trawling (**MBI, g bipartito, $K_{s,t}$**)
+* Trawling (**MBA, g bipartito, $K_{s,t}$**)
 

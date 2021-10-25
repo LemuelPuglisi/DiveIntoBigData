@@ -438,7 +438,7 @@ Quindi la probabilità che, non comprando il Te, si compri il caffè è ancora p
 ##### Ulteriori metriche
 
 * Lift, definito come $\frac{P(Y \mid X)}{P(Y)}$
-* Intereset, definito come $\frac{P(X,Y)}{P(X)P(Y)}$
+* Interest, definito come $\frac{P(X,Y)}{P(X)P(Y)}$
 * PS (Piatetsky-Shapiro's), definito come $P(X,Y) - P(X)P(Y)$
 * $\phi$-coefficient, definito come $\frac{P(X,Y) - P(X)P(Y)}{\sqrt{P(X)[1-P(X)][1-P(Y)]}}$
 

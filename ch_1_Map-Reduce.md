@@ -186,10 +186,10 @@ def M_matrix_map(k, v):
 # la riga j e come valore "N" (identificativo), 
 # i (la riga) ed n (il valore). 
 def N_matrix_map(k, v):
-    i = v[0]
-    j = v[1]
+    j = v[0]
+    k = v[1]
     n = v[2]
-    emit(j, ("N", i, n))
+    emit(j, ("N", k, n))
 
 # si dividono gli elementi raggruppati sono la chiave
 # "i" e si dividono in base alla matrice di provenienza. 

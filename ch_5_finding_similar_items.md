@@ -782,7 +782,7 @@ Per semplicità, supponiamo di trovarci in uno spazio bidimensionale. Ogni funzi
 
 ![image-20210508153805041](ch_5_finding_similar_items.assets/image-20210508153805041.png)
 
-I segmenti sulla linea corrispondono ai bucket in cui la funzione hash $f$ colloca i punti. Il generico punto $A$ è collocato nel bucket (segmento) in cui propria proiezione rispetto alla retta $r$ va a finire. Se la distanza tra due punti $d$ è molto più piccola rispetto alla costante $a$, allora c'è una buona chance che i due punti vengano hashati nello stesso bucket, in tal caso, la funzione $f$ dichiara che i punti sono uguali. 
+I segmenti sulla linea corrispondono ai b nerico punto $A$ è collocato nel bucket (segmento) in cui propria proiezione rispetto alla retta $r$ va a finire. Se la distanza tra due punti $d$ è molto più piccola rispetto alla costante $a$, allora c'è una buona chance che i due punti vengano hashati nello stesso bucket, in tal caso, la funzione $f$ dichiara che i punti sono uguali. 
 
 **a)** Se $d \le \frac a 2$, allora vi è almeno il 50% ($p_1=\frac 1 2$) di possibilità che essi ricadano nello stesso bucket. Se l'angolo $\theta$ formato dai due punti rispetto alla retta $r$ è grande, allora la probabilità che i punti ricadano nello stesso bucket è ancora maggiore: se $\theta =90°$ rispetto ad $r$, allora i due punti ricadranno per certo nello stesso bucket (la retta che passa tra i due punti è perpendicolare alla retta $r$). 
 

@@ -378,7 +378,7 @@ E = \begin{bmatrix}
 \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}} \\
 \end{bmatrix}
 $$
-Ogni matrice con vettori ortonormali (vettori unitari ed ortogonali l'un l'altro) rappresenta una rotazione e/o riflessione degli assia di uno spazio Euclideo. Se moltiplichiamo la matrice $M$ per la matrice $E$ (rotazione) otteniamo:
+Ogni matrice con vettori ortonormali (vettori unitari ed ortogonali l'un l'altro) rappresenta una rotazione e/o riflessione degli assi di uno spazio Euclideo. Se moltiplichiamo la matrice $M$ per la matrice $E$ (rotazione) otteniamo:
 $$
 ME = \begin{bmatrix}
 1 & 2 \\

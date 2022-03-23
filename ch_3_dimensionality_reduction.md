@@ -92,10 +92,9 @@ $$
 (M - \lambda I)e = \bar 0
 $$
 
-
 Dove $I$ è una matrice identità delle stesse dimensioni di $M$. Tale equazione in forma matriciale è rappresentabile come un sistema di equazioni lineari. La matrice $(M - \lambda I)$ corrisponde alla matrice $M$ la cui diagonale è ridotta di una fattore $\lambda$. Sia $\lambda$ incognita, vogliamo trovare gli autovalori e gli autovettori della matrice $M$. 
 
-Per il teorema di Cramer, affinché si risolva l'equazione $(M - \lambda I)e = \bar 0$ per un vettore $\bar e \ne \bar 0$, il determinante della matrice $M - \lambda I$ deve essere diverso da 0. Sebbene il determinante di una matrice $n \times n$ abbia $n!$ termini, questo può essere calcolato in diversi modi in tempo $O(n^3)$, di seguito vedremo uno tra questi metodi. 
+Affinché si risolva l'equazione $(M - \lambda I)e = \bar 0$ per un vettore $\bar e \ne \bar 0$, il determinante della matrice $M - \lambda I$ deve essere diverso da 0. Ciò è necessario poiché se $det(M- \lambda I)=0$ allora per il teorema di Cramer il sistema lineare ammette una sola soluzione, che è banalmente $\bar e =0$ (ma vogliamo una soluzione $\bar e \ne 0$). Sebbene il determinante di una matrice $n \times n$ abbia $n!$ termini, questo può essere calcolato in diversi modi in tempo $O(n^3)$, di seguito vedremo uno tra questi metodi. 
 
 
 
